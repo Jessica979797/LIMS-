@@ -1,0 +1,553 @@
+// ===========================================================================
+// LIMS 检测系统 - Prisma 数据模型
+// 四大模块：CS(客户/委托) · OP(样品/任务) · Lab(检测/方法/设备) · Reporting(报告)
+// 主数据链：Customer -> Application -> Sample -> TestTask -> TestResult -> Report
+// ===========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================================================
+// 一、组织与权限（system）
+// ===========================================================================
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  users     User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  password     String // bcrypt 哈希
+  name         String
+  email        String?
+  phone        String?
+  status       UserStatus @default(ACTIVE)
+
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+
+  roles        UserRole[]
+
+  // 反向关系：业务实体引用当前用户作为经办/检测/签发人
+  receivedApplications Application[]   @relation("appReceivedBy")
+  assignedTasks        TestTask[]      @relation("taskAssignedTo")
+  preparedReports      Report[]        @relation("reportPreparer")
+  reviewedReports      Report[]        @relation("reportReviewer")
+  approvedReports      Report[]        @relation("reportApprover")
+  signoffs             ReportSignoff[] @relation("signoffUser")
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([departmentId])
+}
+
+model Role {
+  id        String   @id @default(cuid())
+  name      String   @unique // 显示名：CS专员、Lab检测员、报告批准人
+  code      String   @unique // 编码：cs_staff、lab_tester、report_approver
+  module    Module   // 所属模块
+  users     UserRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserRole {
+  userId String
+  roleId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+// ===========================================================================
+// 二、CS 客户服务：客户、联系人、委托、报价
+// ===========================================================================
+
+model Customer {
+  id          String         @id @default(cuid())
+  customerNo  String         @unique // 客户编号 C2026001
+  name        String
+  type        CustomerType
+  industry    String?
+  address     String?
+  phone       String?
+  email       String?
+  creditCode  String? // 统一社会信用代码
+  status      CustomerStatus @default(ACTIVE)
+
+  contacts       Contact[]
+  applications   Application[]
+  quotations     Quotation[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([status])
+}
+
+model Contact {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name       String
+  position   String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  applicationNo  String            @unique // 委托单号 WT20260001
+  customerId     String
+  customer       Customer          @relation(fields: [customerId], references: [id])
+  contactId      String? // 委托联系人（冗余便于查询）
+
+  status         ApplicationStatus @default(DRAFT)
+  category       String? // 检测类别：电子电气/化学/机械...
+
+  // 报价与合同
+  quotationId    String?           @unique
+  quotation      Quotation?        @relation(fields: [quotationId], references: [id])
+  contractNo     String?
+
+  // 业务要求
+  expectedDate   DateTime? // 期望完成日期
+  reportCopies   Int       @default(1)
+  reportForm     ReportForm @default(PDF)
+  remark         String?   @db.Text
+
+  // 经办
+  receivedById   String?
+  receivedBy     User?     @relation("appReceivedBy", fields: [receivedById], references: [id])
+  receivedAt     DateTime?
+
+  items          ApplicationItem[]
+  samples        Sample[]
+  testTasks      TestTask[]
+  reports        Report[]
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  @@index([customerId])
+  @@index([status])
+}
+
+model ApplicationItem {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  testItemId    String
+  testItem      TestItem    @relation(fields: [testItemId], references: [id])
+  remark        String?
+
+  createdAt     DateTime    @default(now())
+
+  @@index([applicationId])
+}
+
+model Quotation {
+  id           String          @id @default(cuid())
+  quotationNo  String          @unique
+  customerId    String
+  customer     Customer        @relation(fields: [customerId], references: [id])
+  status       QuotationStatus @default(DRAFT)
+  totalAmount  Decimal         @db.Decimal(12, 2)
+  currency     String          @default("CNY")
+  validUntil   DateTime?
+  items        Json? // 报价明细 [{testItemId, name, price, qty}]
+  application  Application?
+
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([customerId])
+}
+
+// ===========================================================================
+// 三、OP 业务运营：样品、检测任务
+// ===========================================================================
+
+model Sample {
+  id              String       @id @default(cuid())
+  sampleNo        String       @unique // 样品号 S20260001
+  applicationId   String
+  application     Application  @relation(fields: [applicationId], references: [id])
+  name            String
+  type            String? // 样品规格/型号类别
+  model           String? // 型号
+  batchNo         String? // 批号
+  manufacturer    String?
+  quantity        Int          @default(1)
+  unit            String?
+  status          SampleStatus @default(RECEIVED)
+  receivedAt      DateTime     @default(now())
+  receivedById    String?
+  storageLocation String?
+  retainQty       Int          @default(0) // 留样数量
+
+  testTasks       TestTask[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([applicationId])
+  @@index([status])
+}
+
+// ===========================================================================
+// 四、Lab 实验室：检测项目、方法、设备、结果
+// ===========================================================================
+
+model TestItem {
+  id               String            @id @default(cuid())
+  code             String            @unique // 项目编码
+  name             String // 如：铅(Pb)含量
+  category         String?
+  unit             String? // 结果单位
+  applicationItems ApplicationItem[]
+  methods          TestMethod[]
+  testTasks        TestTask[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model TestMethod {
+  id          String      @id @default(cuid())
+  code        String      @unique // GB/T 5009.12
+  name        String
+  standard    String? // 标准号
+  scope       String? @db.Text // 适用范围
+  testItemId  String
+  testItem    TestItem    @relation(fields: [testItemId], references: [id])
+  equipment   Equipment[] @relation("methodEquipment") // 适用设备（多对多）
+  testTasks   TestTask[]
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([testItemId])
+}
+
+model Equipment {
+  id            String          @id @default(cuid())
+  code          String          @unique // 设备编号 EQ2026001
+  name          String
+  model         String?
+  serialNo      String? // 出厂编号
+  manufacturer  String?
+  status        EquipmentStatus @default(NORMAL)
+  calibrateDate DateTime? // 上次校准日期
+  calibrateDue  DateTime? // 校准到期日
+  methods       TestMethod[]    @relation("methodEquipment")
+  testTasks     TestTask[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([status])
+}
+
+model TestTask {
+  id            String          @id @default(cuid())
+  taskNo        String          @unique // 任务号 T20260001
+  sampleId      String
+  sample        Sample          @relation(fields: [sampleId], references: [id])
+  applicationId String // 冗余便于查询
+  application   Application     @relation(fields: [applicationId], references: [id])
+
+  testItemId    String
+  testItem      TestItem        @relation(fields: [testItemId], references: [id])
+  methodId      String? // 分配的检测方法
+  method        TestMethod?     @relation(fields: [methodId], references: [id])
+  equipmentId   String? // 分配的设备
+  equipment     Equipment?      @relation(fields: [equipmentId], references: [id])
+
+  status        TestTaskStatus  @default(PENDING)
+
+  // 分配
+  assignedToId  String?
+  assignedTo    User?           @relation("taskAssignedTo", fields: [assignedToId], references: [id])
+  assignedAt    DateTime?
+
+  // 检测执行
+  startedAt     DateTime?
+  completedAt   DateTime?
+  reviewedById  String?
+  reviewedAt    DateTime?
+
+  results       TestResult[]
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([sampleId])
+  @@index([applicationId])
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model TestResult {
+  id          String            @id @default(cuid())
+  taskId      String
+  task        TestTask          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  value       String? // 检测值
+  unit        String?
+  limit       String? // 限值（标准要求）
+  conclusion  ResultConclusion  @default(PENDING) // 合格/不合格/待判定
+
+  rawData     Json? // 原始记录数据（多次测量、表格等，结构因项目而异）
+  attachments Json? // 附件路径数组
+  remark      String? @db.Text
+
+  enteredById String?
+  enteredAt   DateTime?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([taskId])
+}
+
+// ===========================================================================
+// 五、Reporting 报告：模板、报告、版本、签发
+// ===========================================================================
+
+model ReportTemplate {
+  id        String           @id @default(cuid())
+  name      String
+  category  String // 检测类别
+  fileUrl   String // 模板文件(.docx)路径
+  fields    Json? // 模板变量字段定义
+  status    TemplateStatus   @default(ACTIVE)
+  reports   Report[]
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Report {
+  id            String       @id @default(cuid())
+  reportNo      String       @unique // 报告号 R20260001
+  applicationId String
+  application   Application  @relation(fields: [applicationId], references: [id])
+  templateId    String?
+  template      ReportTemplate? @relation(fields: [templateId], references: [id])
+
+  status        ReportStatus @default(DRAFT)
+  type          ReportType   @default(NORMAL) // 正式/修订
+  version       Int          @default(1) // 当前版本号
+
+  // 三级签发
+  preparedById  String?
+  preparedBy    User?        @relation("reportPreparer", fields: [preparedById], references: [id])
+  reviewedById  String?
+  reviewedBy    User?        @relation("reportReviewer", fields: [reviewedById], references: [id])
+  approvedById  String?
+  approvedBy    User?        @relation("reportApprover", fields: [approvedById], references: [id])
+
+  preparedAt    DateTime?
+  reviewedAt    DateTime?
+  approvedAt    DateTime?
+  issuedAt      DateTime? // 签发日期
+
+  conclusion    String? @db.Text // 报告总结论
+  fileUrl       String? // 生成的 PDF/Word 文件路径
+
+  versions      ReportVersion[]
+  signoffs      ReportSignoff[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([applicationId])
+  @@index([status])
+}
+
+model ReportVersion {
+  id        String   @id @default(cuid())
+  reportId  String
+  report    Report   @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  version   Int
+  content   Json? // 该版本报告内容数据
+  fileUrl   String?
+  changeLog String? @db.Text // 修订说明
+  createdBy String?
+
+  createdAt DateTime @default(now())
+
+  @@index([reportId])
+}
+
+model ReportSignoff {
+  id        String      @id @default(cuid())
+  reportId  String
+  report    Report      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  step      SignoffStep // PREPARE / REVIEW / APPROVE
+  userId    String
+  user      User        @relation("signoffUser", fields: [userId], references: [id])
+  signed    Boolean     @default(false)
+  comment   String? @db.Text
+  signedAt  DateTime?
+
+  createdAt DateTime    @default(now())
+
+  @@index([reportId])
+}
+
+// ===========================================================================
+// 六、通用：审计日志
+// ===========================================================================
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String // CREATE/UPDATE/DELETE/STATUS_CHANGE
+  entity    String // 实体名
+  entityId  String?
+  before    Json? // 变更前快照
+  after     Json? // 变更后快照
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+// ===========================================================================
+// 枚举
+// ===========================================================================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum Module {
+  CS
+  OP
+  LAB
+  REPORTING
+  SYSTEM
+}
+
+enum CustomerType {
+  ENTERPRISE
+  PERSONAL
+  GOVERNMENT
+  OTHER
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ApplicationStatus {
+  DRAFT // 草稿
+  QUOTED // 已报价
+  CONTRACTED // 已签约
+  RECEIVED // 已收样
+  TESTING // 检测中
+  REPORTING // 报告编制中
+  ISSUED // 已签发
+  DELIVERED // 已交付
+  ARCHIVED // 已归档
+  CANCELLED // 已取消
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum SampleStatus {
+  RECEIVED // 已收样
+  TESTING // 检测中
+  COMPLETED // 检测完成
+  RETAINED // 留样
+  RETURNED // 已退样
+  DISPOSED // 已处置
+}
+
+enum TestTaskStatus {
+  PENDING // 待分配
+  ASSIGNED // 已分配
+  TESTING // 检测中
+  REVIEW // 待复核
+  COMPLETED // 已完成
+  JUDGED // 已判定
+  CANCELLED
+}
+
+enum ResultConclusion {
+  PENDING // 待判定
+  PASS // 合格
+  FAIL // 不合格
+  NA // 不适用
+}
+
+enum EquipmentStatus {
+  NORMAL // 正常
+  MAINTENANCE // 维护中
+  CALIBRATING // 校准中
+  OUTOFSERVICE // 停用
+}
+
+enum ReportStatus {
+  DRAFT // 编制中
+  REVIEW // 待审核
+  APPROVED // 待批准（已审核）
+  ISSUED // 已签发
+  VOID // 作废
+  REVISED // 已修订
+}
+
+enum ReportType {
+  NORMAL // 正式
+  REVISED // 修订
+}
+
+enum ReportForm {
+  PDF
+  WORD
+  BOTH
+}
+
+enum SignoffStep {
+  PREPARE // 编制
+  REVIEW // 审核
+  APPROVE // 批准
+}
+
+enum TemplateStatus {
+  ACTIVE
+  INACTIVE
+}

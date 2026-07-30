@@ -1,0 +1,26 @@
+{
+  "name": "lims-web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "max dev",
+    "build": "max build",
+    "format": "prettier --write .",
+    "tsc": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.0",
+    "@ant-design/pro-components": "^2.7.0",
+    "antd": "^5.20.0",
+    "dayjs": "^1.11.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@umijs/max": "^4.3.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0"
+  }
+}

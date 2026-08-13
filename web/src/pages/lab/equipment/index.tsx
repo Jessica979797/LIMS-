@@ -10,6 +10,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
   getEquipment,
@@ -18,23 +19,25 @@ import {
   deleteEquipment,
   type Equipment,
 } from '@/services/equipment';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  NORMAL: { label: '正常', color: 'green' },
-  MAINTENANCE: { label: '维护中', color: 'gold' },
-  CALIBRATING: { label: '校准中', color: 'blue' },
-  OUTOFSERVICE: { label: '停用', color: 'red' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  NORMAL: { labelId: 'status.equipment.NORMAL', color: 'green' },
+  MAINTENANCE: { labelId: 'status.equipment.MAINTENANCE', color: 'gold' },
+  CALIBRATING: { labelId: 'status.equipment.CALIBRATING', color: 'blue' },
+  OUTOFSERVICE: { labelId: 'status.equipment.OUTOFSERVICE', color: 'red' },
 };
 
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
-
 export default function EquipmentPage() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<Equipment | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
 
   const handleSubmit = async (values: any) => {
     const payload = {
@@ -45,10 +48,10 @@ export default function EquipmentPage() {
     try {
       if (editing) {
         await updateEquipment(editing.id, payload);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createEquipment(payload);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -61,47 +64,47 @@ export default function EquipmentPage() {
   const handleDelete = async (id: string) => {
     try {
       await deleteEquipment(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<Equipment>[] = [
-    { title: '设备编号', dataIndex: 'code', width: 130 },
-    { title: '设备名称', dataIndex: 'name' },
-    { title: '型号', dataIndex: 'model', width: 100, hideInSearch: true },
-    { title: '出厂编号', dataIndex: 'serialNo', width: 120, hideInSearch: true },
-    { title: '厂家', dataIndex: 'manufacturer', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'equipment.col.code' }), dataIndex: 'code', width: 130 },
+    { title: formatMessage({ id: 'equipment.col.name' }), dataIndex: 'name' },
+    { title: formatMessage({ id: 'equipment.col.model' }), dataIndex: 'model', width: 100, hideInSearch: true },
+    { title: formatMessage({ id: 'equipment.col.serialNo' }), dataIndex: 'serialNo', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'equipment.col.manufacturer' }), dataIndex: 'manufacturer', width: 120, hideInSearch: true },
     {
-      title: '状态',
+      title: formatMessage({ id: 'equipment.col.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '校准到期',
+      title: formatMessage({ id: 'equipment.col.calibrateDue' }),
       dataIndex: 'calibrateDue',
       width: 120,
       hideInSearch: true,
       render: (_, r) => (r.calibrateDue ? new Date(r.calibrateDue).toLocaleDateString() : '-'),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'equipment.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
-          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>编辑</a>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(r.id)}>
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>{formatMessage({ id: 'common.edit' })}</a>
+          <Popconfirm title={formatMessage({ id: 'equipment.confirmDelete' })} onConfirm={() => handleDelete(r.id)}>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -117,15 +120,20 @@ export default function EquipmentPage() {
     : { status: 'NORMAL' };
 
   return (
-    <>
+    <PageShell
+      dept="lab"
+      eyebrow={formatMessage({ id: 'dept.lab' })}
+      title={formatMessage({ id: 'shell.lab.equipment.title' })}
+      desc={formatMessage({ id: 'shell.lab.equipment.desc' })}
+    >
       <ProTable<Equipment>
-        headerTitle="设备管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-            新增设备
+            {formatMessage({ id: 'equipment.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -143,26 +151,26 @@ export default function EquipmentPage() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑设备' : '新增设备'}
+        title={editing ? formatMessage({ id: 'equipment.editTitle' }) : formatMessage({ id: 'equipment.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
         initialValues={formInitialValues}
         width={520}
       >
-        <ProFormText name="code" label="设备编号" rules={[{ required: true, message: '请输入编号' }]} />
-        <ProFormText name="name" label="设备名称" rules={[{ required: true, message: '请输入名称' }]} />
+        <ProFormText name="code" label={formatMessage({ id: 'equipment.form.code' })} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'equipment.form.code' }) }) }]} />
+        <ProFormText name="name" label={formatMessage({ id: 'equipment.form.name' })} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'equipment.form.name' }) }) }]} />
         <ProForm.Group>
-          <ProFormText name="model" label="型号" width="sm" />
-          <ProFormText name="serialNo" label="出厂编号" width="sm" />
+          <ProFormText name="model" label={formatMessage({ id: 'equipment.form.model' })} width="sm" />
+          <ProFormText name="serialNo" label={formatMessage({ id: 'equipment.form.serialNo' })} width="sm" />
         </ProForm.Group>
-        <ProFormText name="manufacturer" label="生产厂家" />
+        <ProFormText name="manufacturer" label={formatMessage({ id: 'equipment.form.manufacturer' })} />
         <ProForm.Group>
-          <ProFormDatePicker name="calibrateDate" label="校准日期" width="sm" />
-          <ProFormDatePicker name="calibrateDue" label="校准到期" width="sm" />
+          <ProFormDatePicker name="calibrateDate" label={formatMessage({ id: 'equipment.form.calibrateDate' })} width="sm" />
+          <ProFormDatePicker name="calibrateDue" label={formatMessage({ id: 'equipment.form.calibrateDue' })} width="sm" />
         </ProForm.Group>
-        <ProFormSelect name="status" label="状态" options={STATUS_OPTIONS} />
+        <ProFormSelect name="status" label={formatMessage({ id: 'equipment.form.status' })} options={STATUS_OPTIONS} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

@@ -3,7 +3,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import {
   getUsers,
   createUser,
@@ -11,13 +11,15 @@ import {
   deleteUser,
   type UserOption,
 } from '@/services/user';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  ACTIVE: { label: '启用', color: 'green' },
-  INACTIVE: { label: '停用', color: 'default' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  ACTIVE: { labelId: 'status.common.ACTIVE', color: 'green' },
+  INACTIVE: { labelId: 'status.common.INACTIVE', color: 'default' },
 };
 
 export default function Users() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<UserOption | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -27,10 +29,10 @@ export default function Users() {
     try {
       if (editing) {
         await updateUser(editing.id, values);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createUser(values);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -43,38 +45,38 @@ export default function Users() {
   const handleDelete = async (id: string) => {
     try {
       await deleteUser(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<UserOption>[] = [
-    { title: '用户名', dataIndex: 'username' },
-    { title: '姓名', dataIndex: 'name' },
+    { title: formatMessage({ id: 'user.col.username' }), dataIndex: 'username' },
+    { title: formatMessage({ id: 'user.col.name' }), dataIndex: 'name' },
     {
-      title: '状态',
+      title: formatMessage({ id: 'user.col.status' }),
       dataIndex: 'status',
       hideInSearch: true,
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'user.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
           {access.system_admin && (
-            <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>编辑</a>
+            <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>{formatMessage({ id: 'common.edit' })}</a>
           )}
           {access.system_admin && (
-            <Popconfirm title="确认删除？" onConfirm={() => handleDelete(r.id)}>
-              <a style={{ color: '#ff4d4f' }}>删除</a>
+            <Popconfirm title={formatMessage({ id: 'user.confirmDelete' })} onConfirm={() => handleDelete(r.id)}>
+              <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
             </Popconfirm>
           )}
         </Space>
@@ -83,9 +85,14 @@ export default function Users() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="system"
+      eyebrow={formatMessage({ id: 'dept.system' })}
+      title={formatMessage({ id: 'shell.system.users.title' })}
+      desc={formatMessage({ id: 'shell.system.users.desc' })}
+    >
       <ProTable<UserOption>
-        headerTitle="用户管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -93,7 +100,7 @@ export default function Users() {
           access.system_admin
             ? [
                 <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-                  新增用户
+                  {formatMessage({ id: 'user.add' })}
                 </Button>,
               ]
             : []
@@ -106,23 +113,23 @@ export default function Users() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑用户' : '新增用户'}
+        title={editing ? formatMessage({ id: 'user.editTitle' }) : formatMessage({ id: 'user.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
         initialValues={editing ?? {}}
         width={480}
       >
-        <ProFormText name="username" label="用户名" disabled={!!editing} rules={[{ required: true, message: '请输入用户名' }]} />
-        <ProFormText name="name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]} />
+        <ProFormText name="username" label={formatMessage({ id: 'user.form.username' })} disabled={!!editing} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'user.form.username' }) }) }]} />
+        <ProFormText name="name" label={formatMessage({ id: 'user.form.name' })} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'user.form.name' }) }) }]} />
         <ProFormText
           name="password"
-          label={editing ? '新密码（留空不改）' : '密码'}
-          rules={editing ? [] : [{ required: true, message: '请输入密码' }]}
+          label={editing ? formatMessage({ id: 'user.form.passwordEdit' }) : formatMessage({ id: 'user.form.password' })}
+          rules={editing ? [] : [{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'user.form.password' }) }) }]}
         />
-        <ProFormText name="email" label="邮箱" />
-        <ProFormText name="phone" label="电话" />
+        <ProFormText name="email" label={formatMessage({ id: 'user.form.email' })} />
+        <ProFormText name="phone" label={formatMessage({ id: 'user.form.phone' })} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

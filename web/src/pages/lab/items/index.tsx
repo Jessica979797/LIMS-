@@ -3,6 +3,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getTestItems,
   createTestItem,
@@ -10,8 +11,10 @@ import {
   deleteTestItem,
   type TestItem,
 } from '@/services/testItem';
+import PageShell from '@/components/PageShell';
 
 export default function TestItems() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<TestItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -20,10 +23,10 @@ export default function TestItems() {
     try {
       if (editing) {
         await updateTestItem(editing.id, values);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createTestItem(values);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -36,28 +39,28 @@ export default function TestItems() {
   const handleDelete = async (id: string) => {
     try {
       await deleteTestItem(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<TestItem>[] = [
-    { title: '项目编码', dataIndex: 'code', width: 120 },
-    { title: '项目名称', dataIndex: 'name' },
-    { title: '类别', dataIndex: 'category', width: 120, hideInSearch: true },
-    { title: '单位', dataIndex: 'unit', width: 80, hideInSearch: true },
+    { title: formatMessage({ id: 'item.col.code' }), dataIndex: 'code', width: 120 },
+    { title: formatMessage({ id: 'item.col.name' }), dataIndex: 'name' },
+    { title: formatMessage({ id: 'item.col.category' }), dataIndex: 'category', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'item.col.unit' }), dataIndex: 'unit', width: 80, hideInSearch: true },
     {
-      title: '操作',
+      title: formatMessage({ id: 'item.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
-          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>编辑</a>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(r.id)}>
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>{formatMessage({ id: 'common.edit' })}</a>
+          <Popconfirm title={formatMessage({ id: 'item.confirmDelete' })} onConfirm={() => handleDelete(r.id)}>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -65,15 +68,20 @@ export default function TestItems() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="lab"
+      eyebrow={formatMessage({ id: 'dept.lab' })}
+      title={formatMessage({ id: 'shell.lab.items.title' })}
+      desc={formatMessage({ id: 'shell.lab.items.desc' })}
+    >
       <ProTable<TestItem>
-        headerTitle="检测项目"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-            新增项目
+            {formatMessage({ id: 'item.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -87,18 +95,18 @@ export default function TestItems() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑检测项目' : '新增检测项目'}
+        title={editing ? formatMessage({ id: 'item.editTitle' }) : formatMessage({ id: 'item.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
         initialValues={editing ?? {}}
         width={480}
       >
-        <ProFormText name="code" label="项目编码" rules={[{ required: true, message: '请输入编码' }]} />
-        <ProFormText name="name" label="项目名称" rules={[{ required: true, message: '请输入名称' }]} />
-        <ProFormText name="category" label="类别" />
-        <ProFormText name="unit" label="单位" />
+        <ProFormText name="code" label={formatMessage({ id: 'item.form.code' })} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'item.form.code' }) }) }]} />
+        <ProFormText name="name" label={formatMessage({ id: 'item.form.name' })} rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'item.form.name' }) }) }]} />
+        <ProFormText name="category" label={formatMessage({ id: 'item.form.category' })} />
+        <ProFormText name="unit" label={formatMessage({ id: 'item.form.unit' })} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

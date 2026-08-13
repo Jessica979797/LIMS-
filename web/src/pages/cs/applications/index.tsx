@@ -12,6 +12,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState, useEffect } from 'react';
+import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
   getApplications,
@@ -23,18 +24,19 @@ import {
 } from '@/services/application';
 import { getCustomers } from '@/services/customer';
 import { getTestItems, type TestItem } from '@/services/testItem';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '草稿', color: 'default' },
-  QUOTED: { label: '已报价', color: 'blue' },
-  CONTRACTED: { label: '已签约', color: 'cyan' },
-  RECEIVED: { label: '已收样', color: 'gold' },
-  TESTING: { label: '检测中', color: 'processing' },
-  REPORTING: { label: '报告编制中', color: 'processing' },
-  ISSUED: { label: '已签发', color: 'green' },
-  DELIVERED: { label: '已交付', color: 'green' },
-  ARCHIVED: { label: '已归档', color: 'default' },
-  CANCELLED: { label: '已取消', color: 'red' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  DRAFT: { labelId: 'status.application.DRAFT', color: 'default' },
+  QUOTED: { labelId: 'status.application.QUOTED', color: 'blue' },
+  CONTRACTED: { labelId: 'status.application.CONTRACTED', color: 'cyan' },
+  RECEIVED: { labelId: 'status.application.RECEIVED', color: 'gold' },
+  TESTING: { labelId: 'status.application.TESTING', color: 'processing' },
+  REPORTING: { labelId: 'status.application.REPORTING', color: 'processing' },
+  ISSUED: { labelId: 'status.application.ISSUED', color: 'green' },
+  DELIVERED: { labelId: 'status.application.DELIVERED', color: 'green' },
+  ARCHIVED: { labelId: 'status.application.ARCHIVED', color: 'default' },
+  CANCELLED: { labelId: 'status.application.CANCELLED', color: 'red' },
 };
 
 const REPORT_FORM_OPTIONS = [
@@ -43,28 +45,29 @@ const REPORT_FORM_OPTIONS = [
   { label: 'PDF+Word', value: 'BOTH' },
 ];
 
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
-
 // 状态推进按钮文字
 const APP_NEXT_LABEL: Record<string, string> = {
-  DRAFT: '提交报价',
-  QUOTED: '签约',
-  CONTRACTED: '收样',
-  RECEIVED: '开始检测',
-  TESTING: '完成检测',
-  REPORTING: '签发报告',
-  ISSUED: '交付',
-  DELIVERED: '归档',
+  DRAFT: 'advance.DRAFT',
+  QUOTED: 'advance.QUOTED',
+  CONTRACTED: 'advance.CONTRACTED',
+  RECEIVED: 'advance.RECEIVED',
+  TESTING: 'advance.TESTING',
+  REPORTING: 'advance.REPORTING',
+  ISSUED: 'advance.ISSUED',
+  DELIVERED: 'advance.DELIVERED',
 };
 
 export default function Applications() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<Application | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [testItems, setTestItems] = useState<TestItem[]>([]);
+
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
 
   useEffect(() => {
     getTestItems()
@@ -96,10 +99,10 @@ export default function Applications() {
     try {
       if (editing) {
         await updateApplication(editing.id, payload);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createApplication(payload);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -112,53 +115,53 @@ export default function Applications() {
   const handleDelete = async (id: string) => {
     try {
       await deleteApplication(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const handleAdvance = async (id: string) => {
     try {
       await advanceApplication(id);
-      message.success('推进成功');
+      message.success(formatMessage({ id: 'common.advanceSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('推进失败');
+      message.error(formatMessage({ id: 'common.advanceFail' }));
     }
   };
 
   const columns: ProColumns<Application>[] = [
-    { title: '委托编号', dataIndex: 'applicationNo', width: 130, hideInSearch: true },
+    { title: formatMessage({ id: 'application.col.applicationNo' }), dataIndex: 'applicationNo', width: 130, hideInSearch: true },
     {
-      title: '客户名称',
+      title: formatMessage({ id: 'application.col.customerName' }),
       dataIndex: 'name',
       render: (_, record) => record.customer?.name ?? '-',
     },
-    { title: '检测类别', dataIndex: 'category', width: 100, hideInSearch: true },
+    { title: formatMessage({ id: 'application.col.category' }), dataIndex: 'category', width: 100, hideInSearch: true },
     {
-      title: '状态',
+      title: formatMessage({ id: 'application.col.status' }),
       dataIndex: 'status',
       width: 110,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, record) => {
         const s = STATUS_MAP[record.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : record.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : record.status;
       },
     },
-    { title: '报告份数', dataIndex: 'reportCopies', width: 80, hideInSearch: true },
-    { title: '报告形式', dataIndex: 'reportForm', width: 90, hideInSearch: true },
+    { title: formatMessage({ id: 'application.col.reportCopies' }), dataIndex: 'reportCopies', width: 80, hideInSearch: true },
+    { title: formatMessage({ id: 'application.col.reportForm' }), dataIndex: 'reportForm', width: 90, hideInSearch: true },
     {
-      title: '创建时间',
+      title: formatMessage({ id: 'application.col.createdAt' }),
       dataIndex: 'createdAt',
       width: 160,
       hideInSearch: true,
       render: (_, record) => new Date(record.createdAt).toLocaleString(),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'application.col.action' }),
       width: 180,
       fixed: 'right',
       hideInSearch: true,
@@ -166,18 +169,18 @@ export default function Applications() {
         <Space>
           {APP_NEXT_LABEL[record.status] && (
             <Popconfirm
-              title={`确认${APP_NEXT_LABEL[record.status]}？`}
+              title={formatMessage({ id: 'advance.confirm' }, { action: formatMessage({ id: APP_NEXT_LABEL[record.status] }) })}
               onConfirm={() => handleAdvance(record.id)}
             >
-              <a>{APP_NEXT_LABEL[record.status]}</a>
+              <a>{formatMessage({ id: APP_NEXT_LABEL[record.status] })}</a>
             </Popconfirm>
           )}
-          <a onClick={() => handleEdit(record)}>编辑</a>
+          <a onClick={() => handleEdit(record)}>{formatMessage({ id: 'common.edit' })}</a>
           <Popconfirm
-            title="确认删除该委托？"
+            title={formatMessage({ id: 'application.confirmDelete' })}
             onConfirm={() => handleDelete(record.id)}
           >
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -198,9 +201,14 @@ export default function Applications() {
     : { reportCopies: 1, reportForm: 'PDF', status: 'DRAFT', items: [] };
 
   return (
-    <>
+    <PageShell
+      dept="cs"
+      eyebrow={formatMessage({ id: 'dept.cs' })}
+      title={formatMessage({ id: 'shell.cs.applications.title' })}
+      desc={formatMessage({ id: 'shell.cs.applications.desc' })}
+    >
       <ProTable<Application>
-        headerTitle="委托受理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -211,7 +219,7 @@ export default function Applications() {
             icon={<PlusOutlined />}
             onClick={handleAdd}
           >
-            新增委托
+            {formatMessage({ id: 'application.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -229,7 +237,7 @@ export default function Applications() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑委托' : '新增委托'}
+        title={editing ? formatMessage({ id: 'application.editTitle' }) : formatMessage({ id: 'application.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -238,8 +246,8 @@ export default function Applications() {
       >
         <ProFormSelect
           name="customerId"
-          label="客户"
-          rules={[{ required: true, message: '请选择客户' }]}
+          label={formatMessage({ id: 'application.form.customer' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'application.form.customer' }) }) }]}
           request={async () => {
             const res = await getCustomers({ page: 1, pageSize: 1000 });
             return res.list.map((c) => ({ label: c.name, value: c.id }));
@@ -248,50 +256,50 @@ export default function Applications() {
         <ProForm.Group>
           <ProFormText
             name="category"
-            label="检测类别"
+            label={formatMessage({ id: 'application.form.category' })}
             width="sm"
-            placeholder="如 化学/电子"
+            placeholder={formatMessage({ id: 'application.form.categoryPh' })}
           />
-          <ProFormText name="contractNo" label="合同号" width="sm" />
+          <ProFormText name="contractNo" label={formatMessage({ id: 'application.form.contractNo' })} width="sm" />
         </ProForm.Group>
         <ProForm.Group>
-          <ProFormDatePicker name="expectedDate" label="期望完成日期" width="sm" />
+          <ProFormDatePicker name="expectedDate" label={formatMessage({ id: 'application.form.expectedDate' })} width="sm" />
           <ProFormDigit
             name="reportCopies"
-            label="报告份数"
+            label={formatMessage({ id: 'application.form.reportCopies' })}
             width="sm"
             min={1}
           />
           <ProFormSelect
             name="reportForm"
-            label="报告形式"
+            label={formatMessage({ id: 'application.form.reportForm' })}
             width="sm"
             options={REPORT_FORM_OPTIONS}
           />
         </ProForm.Group>
-        <ProFormText name="remark" label="备注" />
+        <ProFormText name="remark" label={formatMessage({ id: 'application.form.remark' })} />
         <ProFormList
           name="items"
-          label="检测项目"
-          creatorButtonProps={{ creatorButtonText: '添加检测项' }}
+          label={formatMessage({ id: 'application.form.items' })}
+          creatorButtonProps={{ creatorButtonText: formatMessage({ id: 'application.form.addItem' }) }}
           min={1}
           copyIconProps={false}
         >
           <ProForm.Group key="group">
             <ProFormSelect
               name="testItemId"
-              label="检测项目"
+              label={formatMessage({ id: 'application.form.testItem' })}
               options={testItems.map((t) => ({
                 label: `${t.name}(${t.code})`,
                 value: t.id,
               }))}
-              rules={[{ required: true, message: '请选择检测项目' }]}
+              rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'application.form.testItem' }) }) }]}
               width="md"
             />
-            <ProFormText name="remark" label="备注" width="md" />
+            <ProFormText name="remark" label={formatMessage({ id: 'application.form.remark' })} width="md" />
           </ProForm.Group>
         </ProFormList>
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

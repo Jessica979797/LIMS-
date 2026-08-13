@@ -1,5 +1,17 @@
+import { useIntl } from '@umijs/max';
+import PageShell from '@/components/PageShell';
 import PagePlaceholder from '@/components/PagePlaceholder';
 
 export default function Page() {
-  return <PagePlaceholder title="任务分配" desc="检测任务分配与调度" />;
+  const { formatMessage } = useIntl();
+  return (
+    <PageShell
+      dept="op"
+      eyebrow={formatMessage({ id: 'dept.op' })}
+      title={formatMessage({ id: 'shell.op.tasks.title' })}
+      desc={formatMessage({ id: 'shell.op.tasks.desc' })}
+    >
+      <PagePlaceholder hint={formatMessage({ id: 'placeholder.op.tasks' })} />
+    </PageShell>
+  );
 }

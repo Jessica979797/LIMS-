@@ -1,0 +1,387 @@
+/* Practice · 试剂盘设计系统展示页 */
+
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1180px;
+}
+
+/* --- Hero / 层析光谱 --------------------------------------------------- */
+.hero {
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 28px;
+  align-items: center;
+}
+.heroText .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.heroText h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 36px;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  margin: 8px 0 12px;
+  line-height: 1.1;
+}
+.heroText p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  max-width: 44ch;
+}
+
+.spectrum {
+  display: flex;
+  height: 160px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-card);
+}
+.band {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px 10px;
+}
+.band::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 55%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+.bandName {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+}
+.bandHex {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  opacity: 0.85;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+/* --- 卡片 ------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px 24px;
+}
+.sectionHead {
+  margin-bottom: 18px;
+}
+.sectionEyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.sectionTitle {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.sectionHint {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+/* --- 色板 ------------------------------------------------------------- */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+}
+.swatchBlock {
+  height: 64px;
+  border-radius: 10px 10px 0 0;
+}
+.swatchSoft {
+  height: 20px;
+  border-radius: 0 0 10px 10px;
+}
+.swatchMeta {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.swatchMeta strong {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink);
+}
+.swatchEn {
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.swatchHex {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  letter-spacing: 0.02em;
+}
+
+/* --- 部门分色 --------------------------------------------------------- */
+.depts {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+.dept {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.deptDot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 50%;
+}
+.deptName {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.deptDesc {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+/* --- 字体 ------------------------------------------------------------- */
+.typeCol {
+  display: flex;
+  flex-direction: column;
+}
+.typeRow {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  align-items: baseline;
+  gap: 20px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--line);
+}
+.typeRow:last-child {
+  border-bottom: none;
+}
+.typeLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+.d-h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 32px;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.d-h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 24px;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.d-body {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.d-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+  letter-spacing: -0.01em;
+}
+
+/* --- 试剂条 ----------------------------------------------------------- */
+.stripes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stripeRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.stripeName {
+  width: 80px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* --- 状态与组件 ------------------------------------------------------- */
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.compGrid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.miniKpi {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 18px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.mkEyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+.mkValue {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 8px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.mkUnit {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 4px;
+  color: var(--ink-3);
+}
+.mkDelta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--agar-green);
+}
+.compNote .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.compNote p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+/* --- 令牌 ------------------------------------------------------------- */
+.tokens {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.token {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.tokenK {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.tokenV {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+/* --- 响应式 ----------------------------------------------------------- */
+@media (max-width: 980px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+  .swatches {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .depts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .compGrid {
+    grid-template-columns: 1fr;
+  }
+  .tokens {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .page {
+    padding: 16px;
+  }
+  .heroText h1 {
+    font-size: 28px;
+  }
+  .swatches {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .typeRow {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+}

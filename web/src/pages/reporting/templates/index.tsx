@@ -3,20 +3,23 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getReportTemplates,
   createReportTemplate,
   type ReportTemplate,
 } from '@/services/reportTemplate';
+import PageShell from '@/components/PageShell';
 
 export default function ReportTemplates() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleSubmit = async (values: any) => {
     try {
       await createReportTemplate(values);
-      message.success('创建成功');
+      message.success(formatMessage({ id: 'common.createSuccess' }));
       setDrawerOpen(false);
       actionRef.current?.reload();
       return true;
@@ -26,16 +29,21 @@ export default function ReportTemplates() {
   };
 
   const columns: ProColumns<ReportTemplate>[] = [
-    { title: '模板名称', dataIndex: 'name' },
-    { title: '类别', dataIndex: 'category', width: 120 },
-    { title: '文件路径', dataIndex: 'fileUrl' },
-    { title: '状态', dataIndex: 'status', width: 80 },
+    { title: formatMessage({ id: 'template.col.name' }), dataIndex: 'name' },
+    { title: formatMessage({ id: 'template.col.category' }), dataIndex: 'category', width: 120 },
+    { title: formatMessage({ id: 'template.col.fileUrl' }), dataIndex: 'fileUrl' },
+    { title: formatMessage({ id: 'template.col.status' }), dataIndex: 'status', width: 80 },
   ];
 
   return (
-    <>
+    <PageShell
+      dept="report"
+      eyebrow={formatMessage({ id: 'dept.report' })}
+      title={formatMessage({ id: 'shell.reporting.templates.title' })}
+      desc={formatMessage({ id: 'shell.reporting.templates.desc' })}
+    >
       <ProTable<ReportTemplate>
-        headerTitle="报告模板"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={false}
@@ -46,7 +54,7 @@ export default function ReportTemplates() {
             icon={<PlusOutlined />}
             onClick={() => setDrawerOpen(true)}
           >
-            新增模板
+            {formatMessage({ id: 'template.add' })}
           </Button>,
         ]}
         request={async () => {
@@ -56,7 +64,7 @@ export default function ReportTemplates() {
         columns={columns}
       />
       <DrawerForm
-        title="新增模板"
+        title={formatMessage({ id: 'template.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -64,21 +72,21 @@ export default function ReportTemplates() {
       >
         <ProFormText
           name="name"
-          label="模板名称"
-          rules={[{ required: true, message: '请输入模板名称' }]}
+          label={formatMessage({ id: 'template.form.name' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'template.form.name' }) }) }]}
         />
         <ProFormText
           name="category"
-          label="类别"
-          rules={[{ required: true, message: '请输入类别' }]}
+          label={formatMessage({ id: 'template.form.category' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'template.form.category' }) }) }]}
         />
         <ProFormText
           name="fileUrl"
-          label="文件路径"
-          rules={[{ required: true, message: '请输入模板文件路径' }]}
-          placeholder="模板文件(.docx)路径"
+          label={formatMessage({ id: 'template.form.fileUrl' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'template.form.fileUrl' }) }) }]}
+          placeholder={formatMessage({ id: 'template.form.fileUrlPh' })}
         />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

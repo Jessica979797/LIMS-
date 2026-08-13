@@ -12,6 +12,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import dayjs from 'dayjs';
 import {
   getQuotations,
@@ -21,23 +22,25 @@ import {
   type Quotation,
 } from '@/services/quotation';
 import { getCustomers } from '@/services/customer';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '草稿', color: 'default' },
-  SENT: { label: '已发送', color: 'blue' },
-  ACCEPTED: { label: '已接受', color: 'green' },
-  REJECTED: { label: '已拒绝', color: 'red' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  DRAFT: { labelId: 'status.quotation.DRAFT', color: 'default' },
+  SENT: { labelId: 'status.quotation.SENT', color: 'blue' },
+  ACCEPTED: { labelId: 'status.quotation.ACCEPTED', color: 'green' },
+  REJECTED: { labelId: 'status.quotation.REJECTED', color: 'red' },
 };
 
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
-
 export default function Quotations() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<Quotation | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
 
   const handleSubmit = async (values: any) => {
     let items;
@@ -45,7 +48,7 @@ export default function Quotations() {
       try {
         items = JSON.parse(values.items);
       } catch {
-        message.error('明细需为合法 JSON');
+        message.error(formatMessage({ id: 'common.illegalJson' }));
         return false;
       }
     }
@@ -59,10 +62,10 @@ export default function Quotations() {
     try {
       if (editing) {
         await updateQuotation(editing.id, payload);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createQuotation(payload);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -75,56 +78,56 @@ export default function Quotations() {
   const handleDelete = async (id: string) => {
     try {
       await deleteQuotation(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<Quotation>[] = [
-    { title: '报价编号', dataIndex: 'quotationNo', width: 130 },
+    { title: formatMessage({ id: 'quotation.col.quotationNo' }), dataIndex: 'quotationNo', width: 130 },
     {
-      title: '客户',
+      title: formatMessage({ id: 'quotation.col.customerName' }),
       dataIndex: 'customerName',
       hideInSearch: true,
       render: (_, r) => r.customer?.name ?? '-',
     },
     {
-      title: '金额',
+      title: formatMessage({ id: 'quotation.col.totalAmount' }),
       dataIndex: 'totalAmount',
       width: 120,
       hideInSearch: true,
       render: (_, r) => `${r.totalAmount} ${r.currency ?? ''}`,
     },
     {
-      title: '状态',
+      title: formatMessage({ id: 'quotation.col.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '有效期',
+      title: formatMessage({ id: 'quotation.col.validUntil' }),
       dataIndex: 'validUntil',
       width: 120,
       hideInSearch: true,
       render: (_, r) => (r.validUntil ? new Date(r.validUntil).toLocaleDateString() : '-'),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'quotation.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
-          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>编辑</a>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(r.id)}>
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+          <a onClick={() => { setEditing(r); setDrawerOpen(true); }}>{formatMessage({ id: 'common.edit' })}</a>
+          <Popconfirm title={formatMessage({ id: 'quotation.confirmDelete' })} onConfirm={() => handleDelete(r.id)}>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -140,15 +143,20 @@ export default function Quotations() {
     : { currency: 'CNY', status: 'DRAFT' };
 
   return (
-    <>
+    <PageShell
+      dept="cs"
+      eyebrow={formatMessage({ id: 'dept.cs' })}
+      title={formatMessage({ id: 'shell.cs.quotations.title' })}
+      desc={formatMessage({ id: 'shell.cs.quotations.desc' })}
+    >
       <ProTable<Quotation>
-        headerTitle="报价管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
         toolBarRender={() => [
           <Button key="add" type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); setDrawerOpen(true); }}>
-            新增报价
+            {formatMessage({ id: 'quotation.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -166,7 +174,7 @@ export default function Quotations() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑报价' : '新增报价'}
+        title={editing ? formatMessage({ id: 'quotation.editTitle' }) : formatMessage({ id: 'quotation.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -175,21 +183,21 @@ export default function Quotations() {
       >
         <ProFormSelect
           name="customerId"
-          label="客户"
-          rules={[{ required: true, message: '请选择客户' }]}
+          label={formatMessage({ id: 'quotation.form.customer' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'quotation.form.customer' }) }) }]}
           request={async () => {
             const res = await getCustomers({ page: 1, pageSize: 1000 });
             return res.list.map((c) => ({ label: c.name, value: c.id }));
           }}
         />
         <ProForm.Group>
-          <ProFormDigit name="totalAmount" label="金额" width="sm" />
-          <ProFormText name="currency" label="币种" width="sm" />
-          <ProFormDatePicker name="validUntil" label="有效期" width="sm" />
+          <ProFormDigit name="totalAmount" label={formatMessage({ id: 'quotation.form.totalAmount' })} width="sm" />
+          <ProFormText name="currency" label={formatMessage({ id: 'quotation.form.currency' })} width="sm" />
+          <ProFormDatePicker name="validUntil" label={formatMessage({ id: 'quotation.form.validUntil' })} width="sm" />
         </ProForm.Group>
-        <ProFormSelect name="status" label="状态" options={STATUS_OPTIONS} />
-        <ProFormTextArea name="items" label="报价明细(JSON)" placeholder='[{"name":"...","price":100,"qty":1}]' />
+        <ProFormSelect name="status" label={formatMessage({ id: 'quotation.form.status' })} options={STATUS_OPTIONS} />
+        <ProFormTextArea name="items" label={formatMessage({ id: 'quotation.form.items' })} placeholder={formatMessage({ id: 'quotation.form.itemsPh' })} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

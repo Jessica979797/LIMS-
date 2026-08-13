@@ -10,6 +10,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getSamples,
   createSample,
@@ -18,25 +19,27 @@ import {
   type Sample,
 } from '@/services/sample';
 import { getApplications } from '@/services/application';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  RECEIVED: { label: '已收样', color: 'blue' },
-  TESTING: { label: '检测中', color: 'processing' },
-  COMPLETED: { label: '检测完成', color: 'green' },
-  RETAINED: { label: '留样', color: 'gold' },
-  RETURNED: { label: '已退样', color: 'default' },
-  DISPOSED: { label: '已处置', color: 'default' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  RECEIVED: { labelId: 'status.sample.RECEIVED', color: 'blue' },
+  TESTING: { labelId: 'status.sample.TESTING', color: 'processing' },
+  COMPLETED: { labelId: 'status.sample.COMPLETED', color: 'green' },
+  RETAINED: { labelId: 'status.sample.RETAINED', color: 'gold' },
+  RETURNED: { labelId: 'status.sample.RETURNED', color: 'default' },
+  DISPOSED: { labelId: 'status.sample.DISPOSED', color: 'default' },
 };
 
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
-
 export default function Samples() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<Sample | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
 
   const handleAdd = () => {
     setEditing(null);
@@ -52,10 +55,10 @@ export default function Samples() {
     try {
       if (editing) {
         await updateSample(editing.id, values);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createSample(values);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -68,68 +71,68 @@ export default function Samples() {
   const handleDelete = async (id: string) => {
     try {
       await deleteSample(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<Sample>[] = [
-    { title: '样品编号', dataIndex: 'sampleNo', width: 130, hideInSearch: true },
+    { title: formatMessage({ id: 'sample.col.sampleNo' }), dataIndex: 'sampleNo', width: 130, hideInSearch: true },
     {
-      title: '样品名称',
+      title: formatMessage({ id: 'sample.col.name' }),
       dataIndex: 'name',
       render: (_, r) => r.name,
     },
     {
-      title: '委托编号',
+      title: formatMessage({ id: 'sample.col.applicationNo' }),
       dataIndex: 'applicationNo',
       width: 130,
       hideInSearch: true,
       render: (_, r) => r.application?.applicationNo ?? '-',
     },
-    { title: '型号', dataIndex: 'model', width: 100, hideInSearch: true },
-    { title: '批号', dataIndex: 'batchNo', width: 100, hideInSearch: true },
+    { title: formatMessage({ id: 'sample.col.model' }), dataIndex: 'model', width: 100, hideInSearch: true },
+    { title: formatMessage({ id: 'sample.col.batchNo' }), dataIndex: 'batchNo', width: 100, hideInSearch: true },
     {
-      title: '数量',
+      title: formatMessage({ id: 'sample.col.quantity' }),
       dataIndex: 'quantity',
       width: 80,
       hideInSearch: true,
       render: (_, r) => `${r.quantity}${r.unit ?? ''}`,
     },
-    { title: '生产厂家', dataIndex: 'manufacturer', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'sample.col.manufacturer' }), dataIndex: 'manufacturer', width: 120, hideInSearch: true },
     {
-      title: '状态',
+      title: formatMessage({ id: 'sample.col.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '收样时间',
+      title: formatMessage({ id: 'sample.col.receivedAt' }),
       dataIndex: 'receivedAt',
       width: 150,
       hideInSearch: true,
       render: (_, r) => new Date(r.receivedAt).toLocaleString(),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'sample.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
-          <a onClick={() => handleEdit(r)}>编辑</a>
+          <a onClick={() => handleEdit(r)}>{formatMessage({ id: 'common.edit' })}</a>
           <Popconfirm
-            title="确认删除该样品？"
+            title={formatMessage({ id: 'sample.confirmDelete' })}
             onConfirm={() => handleDelete(r.id)}
           >
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -137,9 +140,14 @@ export default function Samples() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="op"
+      eyebrow={formatMessage({ id: 'dept.op' })}
+      title={formatMessage({ id: 'shell.op.samples.title' })}
+      desc={formatMessage({ id: 'shell.op.samples.desc' })}
+    >
       <ProTable<Sample>
-        headerTitle="样品管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -150,7 +158,7 @@ export default function Samples() {
             icon={<PlusOutlined />}
             onClick={handleAdd}
           >
-            新增样品
+            {formatMessage({ id: 'sample.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -168,7 +176,7 @@ export default function Samples() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑样品' : '新增样品'}
+        title={editing ? formatMessage({ id: 'sample.editTitle' }) : formatMessage({ id: 'sample.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -177,8 +185,8 @@ export default function Samples() {
       >
         <ProFormSelect
           name="applicationId"
-          label="委托单"
-          rules={[{ required: true, message: '请选择委托单' }]}
+          label={formatMessage({ id: 'sample.form.application' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'sample.form.application' }) }) }]}
           request={async () => {
             const res = await getApplications({ page: 1, pageSize: 1000 });
             return res.list.map((a) => ({ label: a.applicationNo, value: a.id }));
@@ -186,24 +194,24 @@ export default function Samples() {
         />
         <ProFormText
           name="name"
-          label="样品名称"
-          rules={[{ required: true, message: '请输入样品名称' }]}
+          label={formatMessage({ id: 'sample.form.name' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'sample.form.name' }) }) }]}
         />
         <ProForm.Group>
-          <ProFormText name="type" label="规格类别" width="sm" />
-          <ProFormText name="model" label="型号" width="sm" />
+          <ProFormText name="type" label={formatMessage({ id: 'sample.form.type' })} width="sm" />
+          <ProFormText name="model" label={formatMessage({ id: 'sample.form.model' })} width="sm" />
         </ProForm.Group>
         <ProForm.Group>
-          <ProFormText name="batchNo" label="批号" width="sm" />
-          <ProFormText name="manufacturer" label="生产厂家" width="sm" />
+          <ProFormText name="batchNo" label={formatMessage({ id: 'sample.form.batchNo' })} width="sm" />
+          <ProFormText name="manufacturer" label={formatMessage({ id: 'sample.form.manufacturer' })} width="sm" />
         </ProForm.Group>
         <ProForm.Group>
-          <ProFormDigit name="quantity" label="数量" width="sm" min={1} />
-          <ProFormText name="unit" label="单位" width="sm" placeholder="如 个/件/批" />
-          <ProFormText name="storageLocation" label="存储位置" width="sm" />
+          <ProFormDigit name="quantity" label={formatMessage({ id: 'sample.form.quantity' })} width="sm" min={1} />
+          <ProFormText name="unit" label={formatMessage({ id: 'sample.form.unit' })} width="sm" placeholder={formatMessage({ id: 'sample.form.unitPh' })} />
+          <ProFormText name="storageLocation" label={formatMessage({ id: 'sample.form.storageLocation' })} width="sm" />
         </ProForm.Group>
-        <ProFormSelect name="status" label="状态" options={STATUS_OPTIONS} />
+        <ProFormSelect name="status" label={formatMessage({ id: 'sample.form.status' })} options={STATUS_OPTIONS} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

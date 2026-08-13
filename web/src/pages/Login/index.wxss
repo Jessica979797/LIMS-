@@ -1,0 +1,230 @@
+/* 登录页 · 层析柱式左栏 */
+.wrap {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 480px;
+  background: var(--paper);
+  overflow: hidden;
+}
+/* --- 左：层析柱 --------------------------------------------------------- */
+.column {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(180deg, rgba(14, 26, 36, 0.35) 0%, rgba(22, 35, 47, 0.62) 100%), url('https://mdn.alipayobjects.com/yuyan_qk0oxh/afts/img/V-_oS6r-i7wAAAAAAAAAAAAAFl94AQBr');
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.bands {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.band {
+  flex: 1;
+  transform-origin: top;
+  transform: scaleY(0);
+  animation: bandGrow 900ms cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+  opacity: 0.55;
+}
+.band:nth-child(1) {
+  background: #2b5fff;
+  animation-delay: 60ms;
+}
+.band:nth-child(2) {
+  background: #16c79a;
+  animation-delay: 160ms;
+}
+.band:nth-child(3) {
+  background: #7c4dff;
+  animation-delay: 260ms;
+}
+.band:nth-child(4) {
+  background: #ff4f8b;
+  animation-delay: 360ms;
+}
+.band:nth-child(5) {
+  background: #ffb020;
+  animation-delay: 460ms;
+}
+.band:nth-child(6) {
+  background: #ff5a5a;
+  animation-delay: 560ms;
+}
+@keyframes bandGrow {
+  to {
+    transform: scaleY(1);
+  }
+}
+/* 大字水印 */
+.watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(20px, 4vw, 56px);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(72px, 14vw, 200px);
+  letter-spacing: -0.02em;
+  mix-blend-mode: overlay;
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+}
+.watermark span {
+  opacity: 0;
+  animation: fadeIn 700ms ease-out forwards;
+}
+.watermark span:nth-child(1) {
+  animation-delay: 700ms;
+}
+.watermark span:nth-child(2) {
+  animation-delay: 820ms;
+}
+.watermark span:nth-child(3) {
+  animation-delay: 940ms;
+}
+.watermark span:nth-child(4) {
+  animation-delay: 1060ms;
+}
+/* 左下 meta */
+.meta {
+  position: absolute;
+  left: 40px;
+  bottom: 32px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeIn 500ms ease-out 900ms forwards;
+}
+.meta strong {
+  color: #fff;
+  font-weight: 500;
+  margin-right: 12px;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+/* --- 右：表单栏 --------------------------------------------------------- */
+.pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 56px;
+  background: var(--surface);
+}
+.brand {
+  margin-bottom: 40px;
+}
+.brand h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.brand .subtitle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.brand .stripe {
+  margin-top: 20px;
+  width: 96px;
+}
+.formTitle {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.formHint {
+  color: var(--ink-2);
+  font-size: 13px;
+  margin: 0 0 28px;
+}
+/* Antd LoginForm 内部覆盖 */
+.pane :global(.ant-pro-form-login-container) {
+  padding: 0 !important;
+}
+.pane :global(.ant-pro-form-login-main) {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+.pane :global(.ant-pro-form-login-header),
+.pane :global(.ant-pro-form-login-desc),
+.pane :global(.ant-pro-form-login-logo),
+.pane :global(.ant-pro-form-login-title) {
+  display: none !important;
+}
+.pane :global(.ant-btn) {
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+}
+/* 记录纸式默认账号提示 */
+.record {
+  margin-top: 24px;
+  position: relative;
+  padding: 12px 14px 12px 18px;
+  background: repeating-linear-gradient(180deg, rgba(22, 199, 154, 0.03) 0, rgba(22, 199, 154, 0.03) 22px, transparent 22px, transparent 24px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 22px;
+}
+.record::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--agar-green);
+}
+.record .label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: block;
+  margin-bottom: 2px;
+}
+.record .creds {
+  font-family: var(--font-mono);
+  color: var(--ink);
+  font-weight: 500;
+}
+/* --- 响应式 ------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
+  .column {
+    display: none;
+  }
+  .pane {
+    padding: 32px 24px;
+  }
+  .brand h1 {
+    font-size: 44px;
+  }
+}

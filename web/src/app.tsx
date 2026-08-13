@@ -1,8 +1,25 @@
-import { RunTimeLayoutConfig, history, RequestConfig } from '@umijs/max';
-import { Dropdown, message } from 'antd';
+import { useEffect } from 'react';
+import { RunTimeLayoutConfig, history, useIntl, getLocale, setLocale } from '@umijs/max';
+import { Avatar, Button, Dropdown, message, Space } from 'antd';
+import { GlobalOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/de';
 import { auth } from '@/utils/auth';
 
 const LOGIN_PATH = '/login';
+
+const LANGS = [
+  { value: 'zh-CN', label: '中文', short: '中' },
+  { value: 'en-US', label: 'English', short: 'EN' },
+  { value: 'de-DE', label: 'Deutsch', short: 'DE' },
+] as const;
+
+const DAYJS_LOCALE: Record<string, string> = {
+  'zh-CN': 'zh-cn',
+  'en-US': 'en',
+  'de-DE': 'de',
+};
 
 // 带 token 获取当前用户，失败则清 token
 async function fetchCurrentUser() {
@@ -28,38 +45,76 @@ export async function getInitialState() {
   return { currentUser };
 }
 
-// 布局运行时配置：头像下拉(退出登录) + 路由守卫
+/** 顶栏右侧：语言切换 + 用户头像/退出。用组件形式以合法使用 useIntl。 */
+function HeaderActions({ initialState, setInitialState }: any) {
+  const { formatMessage } = useIntl();
+  const locale = getLocale();
+
+  useEffect(() => {
+    dayjs.locale(DAYJS_LOCALE[locale] || 'en');
+  }, [locale]);
+
+  const handleLogout = async () => {
+    auth.clear();
+    await setInitialState?.((s: any) => ({
+      ...s,
+      currentUser: undefined,
+    }));
+    message.success(formatMessage({ id: 'app.logoutSuccess' }));
+    history.push(LOGIN_PATH);
+  };
+
+  const name = initialState?.currentUser?.name;
+
+  return (
+    <Space size={12} style={{ paddingRight: 12 }}>
+      <Dropdown
+        menu={{
+          items: LANGS.map((l) => ({ key: l.value, label: l.label })),
+          selectedKeys: [locale],
+          onClick: ({ key }) => setLocale(key, false),
+        }}
+      >
+        <Button
+          type="text"
+          size="small"
+          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <GlobalOutlined />
+          {LANGS.find((l) => l.value === locale)?.short}
+        </Button>
+      </Dropdown>
+      <Dropdown
+        menu={{
+          items: [
+            {
+              key: 'logout',
+              label: formatMessage({ id: 'app.logout' }),
+              onClick: handleLogout,
+            },
+          ],
+        }}
+      >
+        <Space size={8} style={{ cursor: 'pointer' }}>
+          <Avatar size="small">{name ? name[0] : ''}</Avatar>
+          {name && <span style={{ fontSize: 14 }}>{name}</span>}
+        </Space>
+      </Dropdown>
+    </Space>
+  );
+}
+
+// 布局运行时配置：右侧操作 + 路由守卫
 export const layout: RunTimeLayoutConfig = (props: any) => {
   const { initialState, setInitialState } = props || {};
   return {
-    title: 'LIMS 检测系统',
-    avatarProps: {
-      title: initialState?.currentUser?.name,
-      size: 'small',
-      render: (_: any, dom: any) => (
-        <Dropdown
-          menu={{
-            items: [
-              {
-                key: 'logout',
-                label: '退出登录',
-                onClick: async () => {
-                  auth.clear();
-                  await setInitialState?.((s: any) => ({
-                    ...s,
-                    currentUser: undefined,
-                  }));
-                  message.success('已退出登录');
-                  history.push(LOGIN_PATH);
-                },
-              },
-            ],
-          }}
-        >
-          {dom}
-        </Dropdown>
-      ),
-    },
+    title: 'LIMS',
+    rightContentRender: () => (
+      <HeaderActions
+        initialState={initialState}
+        setInitialState={setInitialState}
+      />
+    ),
     onPageChange: () => {
       const { location } = history;
       if (location.pathname === LOGIN_PATH) return;

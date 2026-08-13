@@ -8,7 +8,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space, Modal } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
-import { useAccess } from '@umijs/max';
+import { useAccess, useIntl } from '@umijs/max';
 import {
   getReports,
   createReport,
@@ -23,22 +23,19 @@ import {
   type Report,
 } from '@/services/report';
 import { getApplications } from '@/services/application';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  DRAFT: { label: '编制中', color: 'default' },
-  REVIEW: { label: '待审核', color: 'gold' },
-  APPROVED: { label: '待批准', color: 'blue' },
-  ISSUED: { label: '已签发', color: 'green' },
-  VOID: { label: '作废', color: 'red' },
-  REVISED: { label: '已修订', color: 'cyan' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  DRAFT: { labelId: 'status.report.DRAFT', color: 'default' },
+  REVIEW: { labelId: 'status.report.REVIEW', color: 'gold' },
+  APPROVED: { labelId: 'status.report.APPROVED', color: 'blue' },
+  ISSUED: { labelId: 'status.report.ISSUED', color: 'green' },
+  VOID: { labelId: 'status.report.VOID', color: 'red' },
+  REVISED: { labelId: 'status.report.REVISED', color: 'cyan' },
 };
 
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
-
 export default function Reports() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const access = useAccess();
@@ -47,10 +44,15 @@ export default function Reports() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewId, setPreviewId] = useState('');
 
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
+
   const handleSubmit = async (values: any) => {
     try {
       await createReport(values);
-      message.success('创建成功');
+      message.success(formatMessage({ id: 'common.createSuccess' }));
       setDrawerOpen(false);
       actionRef.current?.reload();
       return true;
@@ -62,10 +64,10 @@ export default function Reports() {
   const handleDelete = async (id: string) => {
     try {
       await deleteReport(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
@@ -77,10 +79,10 @@ export default function Reports() {
       if (action === 'prepare') await prepareReport(id);
       else if (action === 'review') await reviewReport(id);
       else await approveReport(id);
-      message.success('操作成功');
+      message.success(formatMessage({ id: 'common.opSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('操作失败');
+      message.error(formatMessage({ id: 'common.opFail' }));
     }
   };
 
@@ -92,7 +94,7 @@ export default function Reports() {
       setPreviewId(id);
       setPreviewOpen(true);
     } catch {
-      message.error('预览加载失败');
+      message.error(formatMessage({ id: 'report.previewFail' }));
     }
   };
 
@@ -100,10 +102,10 @@ export default function Reports() {
     try {
       const res = await generateReport(id);
       setPreviewOpen(false); // 关闭预览弹框
-      message.loading({ content: '报告生成中...', key: `gen-${id}`, duration: 0 });
+      message.loading({ content: formatMessage({ id: 'report.generating' }), key: `gen-$glm_5.2_ark_toC`, duration: 0 });
       pollGeneration(id, res.jobId);
     } catch {
-      message.error('生成请求失败');
+      message.error(formatMessage({ id: 'report.generateFail' }));
     }
   };
 
@@ -116,100 +118,100 @@ export default function Reports() {
         const res = await getGenerationStatus(id, jobId);
         if (res.state === 'completed' && res.fileUrl) {
           clearInterval(timer);
-          message.success({ content: '生成成功', key: `gen-${id}` });
+          message.success({ content: formatMessage({ id: 'report.generateSuccess' }), key: `gen-$glm_5.2_ark_toC` });
           actionRef.current?.reload();
         } else if (res.state === 'failed') {
           clearInterval(timer);
-          message.error({ content: '生成失败', key: `gen-${id}` });
+          message.error({ content: formatMessage({ id: 'report.generateFail' }), key: `gen-$glm_5.2_ark_toC` });
         }
       } catch {
         // 忽略轮询瞬态错误
       }
       if (times >= 60) {
         clearInterval(timer);
-        message.warning({ content: '生成超时，请稍后刷新查看', key: `gen-${id}` });
+        message.warning({ content: formatMessage({ id: 'report.generateTimeout' }), key: `gen-$glm_5.2_ark_toC` });
       }
     }, 2000);
   };
 
   const columns: ProColumns<Report>[] = [
-    { title: '报告编号', dataIndex: 'reportNo', width: 130 },
+    { title: formatMessage({ id: 'report.col.reportNo' }), dataIndex: 'reportNo', width: 130 },
     {
-      title: '委托编号',
+      title: formatMessage({ id: 'report.col.appNo' }),
       dataIndex: 'appNo',
       hideInSearch: true,
       render: (_, r) => r.application?.applicationNo ?? '-',
     },
-    { title: '版本', dataIndex: 'version', width: 60, hideInSearch: true },
+    { title: formatMessage({ id: 'report.col.version' }), dataIndex: 'version', width: 60, hideInSearch: true },
     {
-      title: '结论',
+      title: formatMessage({ id: 'report.col.conclusion' }),
       dataIndex: 'conclusion',
       hideInSearch: true,
       render: (_, r) => r.conclusion ?? '-',
     },
     {
-      title: '状态',
+      title: formatMessage({ id: 'report.col.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '签发时间',
+      title: formatMessage({ id: 'report.col.issuedAt' }),
       dataIndex: 'issuedAt',
       width: 150,
       hideInSearch: true,
       render: (_, r) => (r.issuedAt ? new Date(r.issuedAt).toLocaleString() : '-'),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'report.col.action' }),
       width: 240,
       fixed: 'right',
       hideInSearch: true,
       render: (_, r) => (
         <Space>
           {r.status !== 'ISSUED' && r.status !== 'VOID' && access.report_preparer && (
-            <a onClick={() => handlePreview(r.id)}>生成PDF</a>
+            <a onClick={() => handlePreview(r.id)}>{formatMessage({ id: 'report.generate' })}</a>
           )}
-          {r.fileUrl && <a onClick={() => downloadReport(r.id)}>下载</a>}
+          {r.fileUrl && <a onClick={() => downloadReport(r.id)}>{formatMessage({ id: 'report.download' })}</a>}
           {r.status === 'DRAFT' && access.report_preparer && (
             <Popconfirm
-              title="确认提交编制？"
+              title={formatMessage({ id: 'report.prepareConfirm' })}
               onConfirm={() => handleSignoff('prepare', r.id)}
             >
-              <a>编制提交</a>
+              <a>{formatMessage({ id: 'report.prepare' })}</a>
             </Popconfirm>
           )}
           {r.status === 'REVIEW' && access.report_reviewer && (
             <Popconfirm
-              title="确认审核通过？"
+              title={formatMessage({ id: 'report.reviewConfirm' })}
               onConfirm={() => handleSignoff('review', r.id)}
             >
-              <a>审核</a>
+              <a>{formatMessage({ id: 'report.review' })}</a>
             </Popconfirm>
           )}
           {r.status === 'APPROVED' && access.report_approver && (
             <Popconfirm
-              title="确认批准签发？此操作不可逆"
+              title={formatMessage({ id: 'report.approveConfirm' })}
               onConfirm={() => handleSignoff('approve', r.id)}
             >
-              <a>批准签发</a>
+              <a>{formatMessage({ id: 'report.approve' })}</a>
             </Popconfirm>
           )}
           {r.status === 'DRAFT' && access.system_admin && (
             <Popconfirm
-              title="确认删除该报告？"
+              title={formatMessage({ id: 'report.confirmDelete' })}
               onConfirm={() => handleDelete(r.id)}
             >
-              <a style={{ color: '#ff4d4f' }}>删除</a>
+              <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
             </Popconfirm>
           )}
           {r.status === 'ISSUED' && (
-            <span style={{ color: '#999' }}>已锁定</span>
+            <span style={{ color: '#999' }}>{formatMessage({ id: 'common.locked' })}</span>
           )}
         </Space>
       ),
@@ -217,9 +219,14 @@ export default function Reports() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="report"
+      eyebrow={formatMessage({ id: 'dept.report' })}
+      title={formatMessage({ id: 'shell.reporting.reports.title' })}
+      desc={formatMessage({ id: 'shell.reporting.reports.desc' })}
+    >
       <ProTable<Report>
-        headerTitle="报告管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -232,7 +239,7 @@ export default function Reports() {
                   icon={<PlusOutlined />}
                   onClick={() => setDrawerOpen(true)}
                 >
-                  新增报告
+                  {formatMessage({ id: 'report.add' })}
                 </Button>,
               ]
             : []
@@ -251,7 +258,7 @@ export default function Reports() {
         scroll={{ x: 1100 }}
       />
       <DrawerForm
-        title="新增报告"
+        title={formatMessage({ id: 'report.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -260,31 +267,31 @@ export default function Reports() {
       >
         <ProFormSelect
           name="applicationId"
-          label="委托单"
-          rules={[{ required: true, message: '请选择委托单' }]}
+          label={formatMessage({ id: 'report.form.application' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'report.form.application' }) }) }]}
           request={async () => {
             const res = await getApplications({ page: 1, pageSize: 1000 });
             return res.list.map((a) => ({ label: a.applicationNo, value: a.id }));
           }}
         />
-        <ProFormTextArea name="conclusion" label="报告结论" />
+        <ProFormTextArea name="conclusion" label={formatMessage({ id: 'report.form.conclusion' })} />
       </DrawerForm>
       <Modal
-        title="报告预览"
+        title={formatMessage({ id: 'report.previewTitle' })}
         open={previewOpen}
         onCancel={() => setPreviewOpen(false)}
         width={900}
         destroyOnClose
         footer={[
           <Button key="cancel" onClick={() => setPreviewOpen(false)}>
-            取消
+            {formatMessage({ id: 'common.cancel' })}
           </Button>,
           <Button
             key="gen"
             type="primary"
             onClick={() => handleGenerate(previewId)}
           >
-            生成PDF
+            {formatMessage({ id: 'report.generate' })}
           </Button>,
         ]}
       >
@@ -294,6 +301,6 @@ export default function Reports() {
           title="report-preview"
         />
       </Modal>
-    </>
+    </PageShell>
   );
 }

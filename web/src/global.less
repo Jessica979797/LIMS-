@@ -1,0 +1,274 @@
+/* ==========================================================================
+   LIMS 视觉系统 · 试剂盘 (Reagent Panel)
+   -------------------------------------------------------------------------- */
+
+/* 字体包（本地打包，不走 CDN） */
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+
+/* --- 设计令牌 ------------------------------------------------------------- */
+:root {
+  /* 文字 & 页面 */
+  --ink: #0e1a24;
+  --ink-2: #4a5a66;
+  --ink-3: #8492a0;
+  --paper: #fafbf7;
+  --surface: #ffffff;
+  --line: rgba(14, 26, 36, 0.08);
+  --line-strong: rgba(14, 26, 36, 0.16);
+
+  /* 试剂色 —— 主色板 */
+  --reagent-blue: #2b5fff;
+  --agar-green: #16c79a;
+  --indicator-pink: #ff4f8b;
+  --amber: #ffb020;
+  --purple: #7c4dff;
+  --sample-red: #ff5a5a;
+
+  /* 弱色（背景态） */
+  --reagent-blue-soft: rgba(43, 95, 255, 0.08);
+  --agar-green-soft: rgba(22, 199, 154, 0.1);
+  --indicator-pink-soft: rgba(255, 79, 139, 0.1);
+  --amber-soft: rgba(255, 176, 32, 0.12);
+  --purple-soft: rgba(124, 77, 255, 0.1);
+  --sample-red-soft: rgba(255, 90, 90, 0.1);
+
+  /* 字体栈 */
+  --font-display: 'Space Grotesk Variable', 'PingFang SC', 'Microsoft YaHei',
+    system-ui, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Microsoft YaHei', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'SF Mono', 'Cascadia Code', Consolas,
+    monospace;
+
+  /* 阴影（克制） */
+  --shadow-card: 0 1px 2px rgba(14, 26, 36, 0.04),
+    0 4px 12px rgba(14, 26, 36, 0.04);
+}
+
+/* --- 基础 ---------------------------------------------------------------- */
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Antd / ProLayout 全局微调 ------------------------------------------- */
+
+/* 站点整体底色（Layout 会盖上白，用变量给 ProLayout 面板） */
+.ant-pro-layout {
+  background: var(--paper) !important;
+}
+.ant-pro-layout .ant-layout,
+.ant-pro-layout .ant-layout-content,
+.ant-pro-layout .ant-pro-page-container,
+.ant-pro-layout .ant-pro-page-container-children-container {
+  background: var(--paper) !important;
+}
+
+/* 顶部 header：加一条 4px 试剂色条作为"指示灯" */
+.ant-pro-layout .ant-pro-global-header,
+.ant-pro-layout .ant-pro-top-nav-header {
+  position: relative;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 3px;
+    background: linear-gradient(
+      90deg,
+      var(--reagent-blue) 0%,
+      var(--agar-green) 34%,
+      var(--purple) 62%,
+      var(--indicator-pink) 82%,
+      var(--amber) 100%
+    );
+    z-index: 2;
+  }
+}
+
+/* Logo 标题字体 */
+.ant-pro-layout .ant-pro-global-header-logo h1,
+.ant-pro-layout .ant-pro-top-nav-header-logo h1,
+.ant-pro-layout .ant-pro-sider-logo h1 {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  font-size: 18px !important;
+  color: var(--ink) !important;
+}
+
+/* 侧栏 */
+.ant-pro-sider,
+.ant-pro-sider .ant-layout-sider,
+.ant-pro-sider .ant-menu {
+  background: var(--surface) !important;
+}
+.ant-pro-sider .ant-menu-item,
+.ant-pro-sider .ant-menu-submenu-title {
+  border-radius: 8px !important;
+  margin-inline: 8px !important;
+  width: calc(100% - 16px) !important;
+  transition: all 160ms ease-out;
+}
+.ant-pro-sider .ant-menu-item:hover {
+  background: var(--reagent-blue-soft) !important;
+  color: var(--ink) !important;
+}
+.ant-pro-sider .ant-menu-item-selected {
+  background: var(--reagent-blue-soft) !important;
+  color: var(--reagent-blue) !important;
+  font-weight: 600;
+  position: relative;
+}
+.ant-pro-sider .ant-menu-item-selected::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    var(--reagent-blue),
+    var(--indicator-pink)
+  );
+}
+.ant-pro-sider .ant-menu-item a {
+  color: inherit !important;
+}
+
+/* 面包屑 */
+.ant-pro-page-container-warp-page-header {
+  background: transparent !important;
+}
+
+/* --- Card ---------------------------------------------------------------- */
+.ant-card {
+  border-radius: 14px !important;
+  border-color: var(--line) !important;
+  box-shadow: var(--shadow-card);
+}
+.ant-card-head {
+  border-bottom-color: var(--line) !important;
+}
+.ant-card-head-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* --- ProTable ------------------------------------------------------------ */
+.ant-pro-table .ant-pro-table-list-toolbar,
+.ant-pro-table .ant-pro-table-search {
+  background: var(--surface);
+  border-radius: 14px 14px 0 0;
+}
+.ant-pro-table .ant-pro-table-search {
+  border-bottom: 1px solid var(--line);
+}
+.ant-pro-table .ant-pro-table-list-toolbar-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.ant-table {
+  border-radius: 0 !important;
+}
+.ant-table-container {
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+}
+.ant-table-thead > tr > th {
+  background: var(--paper) !important;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  color: var(--ink-2) !important;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line) !important;
+}
+.ant-table-thead > tr > th::before {
+  display: none !important;
+}
+.ant-table-tbody > tr:hover > td {
+  background: rgba(43, 95, 255, 0.03) !important;
+}
+.ant-table-tbody > tr > td {
+  border-bottom-color: var(--line) !important;
+}
+
+/* --- 按钮 ---------------------------------------------------------------- */
+.ant-btn {
+  font-family: var(--font-body);
+  font-weight: 500;
+}
+.ant-btn-primary {
+  box-shadow: 0 1px 0 rgba(43, 95, 255, 0.16),
+    0 2px 8px rgba(43, 95, 255, 0.18);
+}
+
+/* --- Tag（状态） --------------------------------------------------------- */
+.ant-tag {
+  border-radius: 999px !important;
+  border: 1px solid transparent;
+  padding-inline: 10px;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 20px;
+  height: 22px;
+}
+
+/* --- 通用工具类 ---------------------------------------------------------- */
+.mono {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+.display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+.muted {
+  color: var(--ink-2);
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Focus 环：试剂蓝虚描 */
+:focus-visible {
+  outline: 2px dashed var(--reagent-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

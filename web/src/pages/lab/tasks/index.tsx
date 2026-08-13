@@ -3,6 +3,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getTestTasks,
   createTestTask,
@@ -14,35 +15,37 @@ import {
 import { getSamples } from '@/services/sample';
 import { getTestItems } from '@/services/testItem';
 import { getUsers } from '@/services/user';
+import PageShell from '@/components/PageShell';
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  PENDING: { label: '待分配', color: 'default' },
-  ASSIGNED: { label: '已分配', color: 'blue' },
-  TESTING: { label: '检测中', color: 'processing' },
-  REVIEW: { label: '待复核', color: 'gold' },
-  COMPLETED: { label: '已完成', color: 'green' },
-  JUDGED: { label: '已判定', color: 'green' },
-  CANCELLED: { label: '已取消', color: 'red' },
+const STATUS_MAP: Record<string, { labelId: string; color: string }> = {
+  PENDING: { labelId: 'status.task.PENDING', color: 'default' },
+  ASSIGNED: { labelId: 'status.task.ASSIGNED', color: 'blue' },
+  TESTING: { labelId: 'status.task.TESTING', color: 'processing' },
+  REVIEW: { labelId: 'status.task.REVIEW', color: 'gold' },
+  COMPLETED: { labelId: 'status.task.COMPLETED', color: 'green' },
+  JUDGED: { labelId: 'status.task.JUDGED', color: 'green' },
+  CANCELLED: { labelId: 'status.task.CANCELLED', color: 'red' },
 };
-
-const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
-  label: v.label,
-  value,
-}));
 
 // 状态推进按钮文字
 const TASK_NEXT_LABEL: Record<string, string> = {
-  PENDING: '分配',
-  ASSIGNED: '开始检测',
-  TESTING: '提交复核',
-  REVIEW: '复核通过',
-  COMPLETED: '判定',
+  PENDING: 'advance.PENDING',
+  ASSIGNED: 'advance.ASSIGNED',
+  TESTING: 'advance.taskTESTING',
+  REVIEW: 'advance.REVIEW',
+  COMPLETED: 'advance.COMPLETED',
 };
 
 export default function TestTasks() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<TestTask | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const STATUS_OPTIONS = Object.entries(STATUS_MAP).map(([value, v]) => ({
+    label: formatMessage({ id: v.labelId }),
+    value,
+  }));
 
   const handleAdd = () => {
     setEditing(null);
@@ -58,10 +61,10 @@ export default function TestTasks() {
     try {
       if (editing) {
         await updateTestTask(editing.id, values);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createTestTask(values);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -74,71 +77,71 @@ export default function TestTasks() {
   const handleDelete = async (id: string) => {
     try {
       await deleteTestTask(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const handleAdvance = async (id: string) => {
     try {
       await advanceTestTask(id);
-      message.success('推进成功');
+      message.success(formatMessage({ id: 'common.advanceSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('推进失败');
+      message.error(formatMessage({ id: 'common.advanceFail' }));
     }
   };
 
   const columns: ProColumns<TestTask>[] = [
-    { title: '任务编号', dataIndex: 'taskNo', width: 130 },
+    { title: formatMessage({ id: 'task.col.taskNo' }), dataIndex: 'taskNo', width: 130 },
     {
-      title: '样品',
+      title: formatMessage({ id: 'task.col.sample' }),
       dataIndex: 'sample',
       hideInSearch: true,
       render: (_, r) => (r.sample ? `${r.sample.sampleNo} ${r.sample.name}` : '-'),
     },
     {
-      title: '检测项目',
+      title: formatMessage({ id: 'task.col.testItem' }),
       dataIndex: 'testItem',
       hideInSearch: true,
       render: (_, r) => r.testItem?.name ?? '-',
     },
     {
-      title: '检测员',
+      title: formatMessage({ id: 'task.col.assignedTo' }),
       dataIndex: 'assignedTo',
       width: 100,
       hideInSearch: true,
       render: (_, r) => r.assignedTo?.name ?? '-',
     },
     {
-      title: '状态',
+      title: formatMessage({ id: 'task.col.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, r) => {
         const s = STATUS_MAP[r.status];
-        return s ? <Tag color={s.color}>{s.label}</Tag> : r.status;
+        return s ? <Tag color={s.color}>{formatMessage({ id: s.labelId })}</Tag> : r.status;
       },
     },
     {
-      title: '分配时间',
+      title: formatMessage({ id: 'task.col.assignedAt' }),
       dataIndex: 'assignedAt',
       width: 150,
       hideInSearch: true,
       render: (_, r) => (r.assignedAt ? new Date(r.assignedAt).toLocaleString() : '-'),
     },
     {
-      title: '创建时间',
+      title: formatMessage({ id: 'task.col.createdAt' }),
       dataIndex: 'createdAt',
       width: 150,
       hideInSearch: true,
       render: (_, r) => new Date(r.createdAt).toLocaleString(),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'task.col.action' }),
       width: 200,
       fixed: 'right',
       hideInSearch: true,
@@ -146,18 +149,18 @@ export default function TestTasks() {
         <Space>
           {TASK_NEXT_LABEL[r.status] && (
             <Popconfirm
-              title={`确认${TASK_NEXT_LABEL[r.status]}？`}
+              title={formatMessage({ id: 'advance.confirm' }, { action: formatMessage({ id: TASK_NEXT_LABEL[r.status] }) })}
               onConfirm={() => handleAdvance(r.id)}
             >
-              <a>{TASK_NEXT_LABEL[r.status]}</a>
+              <a>{formatMessage({ id: TASK_NEXT_LABEL[r.status] })}</a>
             </Popconfirm>
           )}
-          <a onClick={() => handleEdit(r)}>编辑</a>
+          <a onClick={() => handleEdit(r)}>{formatMessage({ id: 'common.edit' })}</a>
           <Popconfirm
-            title="确认删除该任务？"
+            title={formatMessage({ id: 'task.confirmDelete' })}
             onConfirm={() => handleDelete(r.id)}
           >
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -165,9 +168,14 @@ export default function TestTasks() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="lab"
+      eyebrow={formatMessage({ id: 'dept.lab' })}
+      title={formatMessage({ id: 'shell.lab.tasks.title' })}
+      desc={formatMessage({ id: 'shell.lab.tasks.desc' })}
+    >
       <ProTable<TestTask>
-        headerTitle="检测任务"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -178,7 +186,7 @@ export default function TestTasks() {
             icon={<PlusOutlined />}
             onClick={handleAdd}
           >
-            新增任务
+            {formatMessage({ id: 'task.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -196,7 +204,7 @@ export default function TestTasks() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑检测任务' : '新增检测任务'}
+        title={editing ? formatMessage({ id: 'task.editTitle' }) : formatMessage({ id: 'task.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -205,8 +213,8 @@ export default function TestTasks() {
       >
         <ProFormSelect
           name="sampleId"
-          label="样品"
-          rules={[{ required: true, message: '请选择样品' }]}
+          label={formatMessage({ id: 'task.form.sample' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'task.form.sample' }) }) }]}
           request={async () => {
             const res = await getSamples({ page: 1, pageSize: 1000 });
             return res.list.map((s) => ({
@@ -217,8 +225,8 @@ export default function TestTasks() {
         />
         <ProFormSelect
           name="testItemId"
-          label="检测项目"
-          rules={[{ required: true, message: '请选择检测项目' }]}
+          label={formatMessage({ id: 'task.form.testItem' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'task.form.testItem' }) }) }]}
           request={async () => {
             const res = await getTestItems();
             return res.map((t) => ({ label: `${t.name}(${t.code})`, value: t.id }));
@@ -226,15 +234,15 @@ export default function TestTasks() {
         />
         <ProFormSelect
           name="assignedToId"
-          label="检测员"
+          label={formatMessage({ id: 'task.form.assignedTo' })}
           allowClear
           request={async () => {
             const res = await getUsers();
             return res.map((u) => ({ label: u.name, value: u.id }));
           }}
         />
-        <ProFormSelect name="status" label="状态" options={STATUS_OPTIONS} />
+        <ProFormSelect name="status" label={formatMessage({ id: 'task.form.status' })} options={STATUS_OPTIONS} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

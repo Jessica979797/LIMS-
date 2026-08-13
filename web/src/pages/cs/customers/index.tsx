@@ -8,6 +8,7 @@ import type { ProColumns, ActionType } from '@ant-design/pro-components';
 import { Button, Popconfirm, message, Tag, Space } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
+import { useIntl } from '@umijs/max';
 import {
   getCustomers,
   createCustomer,
@@ -15,23 +16,25 @@ import {
   deleteCustomer,
   type Customer,
 } from '@/services/customer';
-
-const TYPE_OPTIONS = [
-  { label: '企业', value: 'ENTERPRISE' },
-  { label: '个人', value: 'PERSONAL' },
-  { label: '政府', value: 'GOVERNMENT' },
-  { label: '其他', value: 'OTHER' },
-];
-
-const STATUS_OPTIONS = [
-  { label: '启用', value: 'ACTIVE' },
-  { label: '停用', value: 'INACTIVE' },
-];
+import PageShell from '@/components/PageShell';
 
 export default function Customers() {
+  const { formatMessage } = useIntl();
   const actionRef = useRef<ActionType>();
   const [editing, setEditing] = useState<Customer | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const TYPE_OPTIONS = [
+    { label: formatMessage({ id: 'customer.type.ENTERPRISE' }), value: 'ENTERPRISE' },
+    { label: formatMessage({ id: 'customer.type.PERSONAL' }), value: 'PERSONAL' },
+    { label: formatMessage({ id: 'customer.type.GOVERNMENT' }), value: 'GOVERNMENT' },
+    { label: formatMessage({ id: 'customer.type.OTHER' }), value: 'OTHER' },
+  ];
+
+  const STATUS_OPTIONS = [
+    { label: formatMessage({ id: 'status.common.ACTIVE' }), value: 'ACTIVE' },
+    { label: formatMessage({ id: 'status.common.INACTIVE' }), value: 'INACTIVE' },
+  ];
 
   const handleAdd = () => {
     setEditing(null);
@@ -47,10 +50,10 @@ export default function Customers() {
     try {
       if (editing) {
         await updateCustomer(editing.id, values);
-        message.success('更新成功');
+        message.success(formatMessage({ id: 'common.updateSuccess' }));
       } else {
         await createCustomer(values);
-        message.success('创建成功');
+        message.success(formatMessage({ id: 'common.createSuccess' }));
       }
       setDrawerOpen(false);
       actionRef.current?.reload();
@@ -63,22 +66,22 @@ export default function Customers() {
   const handleDelete = async (id: string) => {
     try {
       await deleteCustomer(id);
-      message.success('删除成功');
+      message.success(formatMessage({ id: 'common.deleteSuccess' }));
       actionRef.current?.reload();
     } catch {
-      message.error('删除失败');
+      message.error(formatMessage({ id: 'common.deleteFail' }));
     }
   };
 
   const columns: ProColumns<Customer>[] = [
-    { title: '客户编号', dataIndex: 'customerNo', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'customer.col.customerNo' }), dataIndex: 'customerNo', width: 120, hideInSearch: true },
     {
-      title: '客户名称',
+      title: formatMessage({ id: 'customer.col.name' }),
       dataIndex: 'name',
       render: (dom, record) => record.name,
     },
     {
-      title: '类型',
+      title: formatMessage({ id: 'customer.col.type' }),
       dataIndex: 'type',
       width: 90,
       valueType: 'select',
@@ -86,41 +89,43 @@ export default function Customers() {
       render: (_, record) =>
         TYPE_OPTIONS.find((o) => o.value === record.type)?.label ?? record.type,
     },
-    { title: '行业', dataIndex: 'industry', width: 120, hideInSearch: true },
-    { title: '联系电话', dataIndex: 'phone', width: 130, hideInSearch: true },
-    { title: '信用代码', dataIndex: 'creditCode', width: 160, hideInSearch: true },
+    { title: formatMessage({ id: 'customer.col.industry' }), dataIndex: 'industry', width: 120, hideInSearch: true },
+    { title: formatMessage({ id: 'customer.col.phone' }), dataIndex: 'phone', width: 130, hideInSearch: true },
+    { title: formatMessage({ id: 'customer.col.creditCode' }), dataIndex: 'creditCode', width: 160, hideInSearch: true },
     {
-      title: '状态',
+      title: formatMessage({ id: 'customer.col.status' }),
       dataIndex: 'status',
       width: 80,
       valueType: 'select',
       fieldProps: { options: STATUS_OPTIONS },
       render: (_, record) => (
         <Tag color={record.status === 'ACTIVE' ? 'green' : 'default'}>
-          {record.status === 'ACTIVE' ? '启用' : '停用'}
+          {record.status === 'ACTIVE'
+            ? formatMessage({ id: 'status.common.ACTIVE' })
+            : formatMessage({ id: 'status.common.INACTIVE' })}
         </Tag>
       ),
     },
     {
-      title: '创建时间',
+      title: formatMessage({ id: 'customer.col.createdAt' }),
       dataIndex: 'createdAt',
       width: 160,
       hideInSearch: true,
       render: (_, record) => new Date(record.createdAt).toLocaleString(),
     },
     {
-      title: '操作',
+      title: formatMessage({ id: 'customer.col.action' }),
       width: 120,
       fixed: 'right',
       hideInSearch: true,
       render: (_, record) => (
         <Space>
-          <a onClick={() => handleEdit(record)}>编辑</a>
+          <a onClick={() => handleEdit(record)}>{formatMessage({ id: 'common.edit' })}</a>
           <Popconfirm
-            title="确认删除该客户？"
+            title={formatMessage({ id: 'customer.confirmDelete' })}
             onConfirm={() => handleDelete(record.id)}
           >
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+            <a style={{ color: '#ff4d4f' }}>{formatMessage({ id: 'common.delete' })}</a>
           </Popconfirm>
         </Space>
       ),
@@ -128,9 +133,14 @@ export default function Customers() {
   ];
 
   return (
-    <>
+    <PageShell
+      dept="cs"
+      eyebrow={formatMessage({ id: 'dept.cs' })}
+      title={formatMessage({ id: 'shell.cs.customers.title' })}
+      desc={formatMessage({ id: 'shell.cs.customers.desc' })}
+    >
       <ProTable<Customer>
-        headerTitle="客户管理"
+        headerTitle={false}
         actionRef={actionRef}
         rowKey="id"
         search={{ labelWidth: 'auto' }}
@@ -141,7 +151,7 @@ export default function Customers() {
             icon={<PlusOutlined />}
             onClick={handleAdd}
           >
-            新增客户
+            {formatMessage({ id: 'customer.add' })}
           </Button>,
         ]}
         request={async (params) => {
@@ -164,7 +174,7 @@ export default function Customers() {
       />
       <DrawerForm
         key={editing?.id ?? 'new'}
-        title={editing ? '编辑客户' : '新增客户'}
+        title={editing ? formatMessage({ id: 'customer.editTitle' }) : formatMessage({ id: 'customer.addTitle' })}
         open={drawerOpen}
         onOpenChange={setDrawerOpen}
         onFinish={handleSubmit}
@@ -173,22 +183,22 @@ export default function Customers() {
       >
         <ProFormText
           name="name"
-          label="客户名称"
-          rules={[{ required: true, message: '请输入客户名称' }]}
+          label={formatMessage({ id: 'customer.form.name' })}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseInput' }, { field: formatMessage({ id: 'customer.form.name' }) }) }]}
         />
         <ProFormSelect
           name="type"
-          label="客户类型"
+          label={formatMessage({ id: 'customer.form.type' })}
           options={TYPE_OPTIONS}
-          rules={[{ required: true, message: '请选择客户类型' }]}
+          rules={[{ required: true, message: formatMessage({ id: 'common.pleaseSelect' }, { field: formatMessage({ id: 'customer.form.type' }) }) }]}
         />
-        <ProFormText name="industry" label="行业" />
-        <ProFormText name="phone" label="联系电话" />
-        <ProFormText name="email" label="邮箱" />
-        <ProFormText name="creditCode" label="统一社会信用代码" />
-        <ProFormText name="address" label="地址" />
-        <ProFormSelect name="status" label="状态" options={STATUS_OPTIONS} />
+        <ProFormText name="industry" label={formatMessage({ id: 'customer.form.industry' })} />
+        <ProFormText name="phone" label={formatMessage({ id: 'customer.form.phone' })} />
+        <ProFormText name="email" label={formatMessage({ id: 'customer.form.email' })} />
+        <ProFormText name="creditCode" label={formatMessage({ id: 'customer.form.creditCode' })} />
+        <ProFormText name="address" label={formatMessage({ id: 'customer.form.address' })} />
+        <ProFormSelect name="status" label={formatMessage({ id: 'customer.form.status' })} options={STATUS_OPTIONS} />
       </DrawerForm>
-    </>
+    </PageShell>
   );
 }

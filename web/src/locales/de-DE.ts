@@ -33,6 +33,9 @@ export default {
   /* ---------------- app ---------------- */
   'app.logout': 'Abmelden',
   'app.logoutSuccess': 'Abgemeldet',
+  'theme.white': 'Hell',
+  'theme.black': 'Dunkel',
+  'theme.gray': 'Grau',
 
   /* ---------------- menu ---------------- */
   'menu.practice': 'Übung',

@@ -33,6 +33,9 @@ export default {
   /* ---------------- app ---------------- */
   'app.logout': 'Sign out',
   'app.logoutSuccess': 'Signed out',
+  'theme.white': 'Light',
+  'theme.black': 'Dark',
+  'theme.gray': 'Gray',
 
   /* ---------------- menu ---------------- */
   'menu.practice': 'Practice',

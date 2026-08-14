@@ -1,13 +1,22 @@
 import { useEffect } from 'react';
-import { RunTimeLayoutConfig, history, useIntl, getLocale, setLocale } from '@umijs/max';
+import {
+  RunTimeLayoutConfig,
+  history,
+  useIntl,
+  getLocale,
+  setLocale,
+  useAntdConfigSetter,
+} from '@umijs/max';
 import { Avatar, Button, Dropdown, message, Space } from 'antd';
-import { GlobalOutlined } from '@ant-design/icons';
+import { BgColorsOutlined, GlobalOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
 import 'dayjs/locale/de';
 import { auth } from '@/utils/auth';
+import { buildAntdTheme, THEMES, type ThemeName } from '@/utils/theme';
 
 const LOGIN_PATH = '/login';
+const THEME_STORAGE_KEY = 'lims-theme';
 
 const LANGS = [
   { value: 'zh-CN', label: '中文', short: '中' },
@@ -39,20 +48,42 @@ async function fetchCurrentUser() {
   }
 }
 
-// 运行时初始状态：当前用户
+// 运行时初始状态：当前用户 + 主题（启动即设 data-theme，防闪烁）
 export async function getInitialState() {
   const currentUser = await fetchCurrentUser();
-  return { currentUser };
+  const theme =
+    (localStorage.getItem(THEME_STORAGE_KEY) as ThemeName) || 'white';
+  document.documentElement.dataset.theme = theme;
+  return { currentUser, theme };
 }
 
-/** 顶栏右侧：语言切换 + 用户头像/退出。用组件形式以合法使用 useIntl。 */
+/** 顶栏右侧：主题切换 + 语言切换 + 用户头像/退出。 */
 function HeaderActions({ initialState, setInitialState }: any) {
   const { formatMessage } = useIntl();
+  const setAntdConfig = useAntdConfigSetter();
   const locale = getLocale();
+  const theme = (initialState?.theme as ThemeName) || 'white';
 
   useEffect(() => {
     dayjs.locale(DAYJS_LOCALE[locale] || 'en');
   }, [locale]);
+
+  // 主题变化时：合并更新 antd ConfigProvider.theme（保留 locale 等其它 props）+ 切 CSS 变量。
+  // 注意：setAntdConfig 由 Umi 在每次 AntdProvider 渲染时重建（非稳定引用），不可放入依赖，
+  // 否则 effect->setState->重渲染->引用变->effect 的无限循环会导致白屏。
+  useEffect(() => {
+    setAntdConfig((prev: any) => ({
+      ...prev,
+      theme: buildAntdTheme(theme),
+    }));
+    document.documentElement.dataset.theme = theme;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
+
+  const handleThemeChange = (t: ThemeName) => {
+    localStorage.setItem(THEME_STORAGE_KEY, t);
+    setInitialState?.((s: any) => ({ ...s, theme: t }));
+  };
 
   const handleLogout = async () => {
     auth.clear();
@@ -65,9 +96,30 @@ function HeaderActions({ initialState, setInitialState }: any) {
   };
 
   const name = initialState?.currentUser?.name;
+  const currentThemeLabel =
+    THEMES.find((t) => t.value === theme)?.labelId || 'theme.white';
 
   return (
     <Space size={12} style={{ paddingRight: 12 }}>
+      <Dropdown
+        menu={{
+          items: THEMES.map((t) => ({
+            key: t.value,
+            label: formatMessage({ id: t.labelId }),
+          })),
+          selectedKeys: [theme],
+          onClick: ({ key }) => handleThemeChange(key as ThemeName),
+        }}
+      >
+        <Button
+          type="text"
+          size="small"
+          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+        >
+          <BgColorsOutlined />
+          {formatMessage({ id: currentThemeLabel })}
+        </Button>
+      </Dropdown>
       <Dropdown
         menu={{
           items: LANGS.map((l) => ({ key: l.value, label: l.label })),
@@ -107,8 +159,22 @@ function HeaderActions({ initialState, setInitialState }: any) {
 // 布局运行时配置：右侧操作 + 路由守卫
 export const layout: RunTimeLayoutConfig = (props: any) => {
   const { initialState, setInitialState } = props || {};
+
+  // 菜单 i18n：ProLayout 翻译用 item.locale 字段（非 item.name）。UmiJS 只设了 name，
+  // 这里给每个菜单项补 locale = name（= 路由 name = i18n 键），配合 menu.locale:true，
+  // ProLayout 用其 formatMessage（随语言切换）翻译菜单名。
+  const withLocale = (list?: any[]): any[] =>
+    (list || []).map((item: any) => {
+      const next: any = { ...item, locale: item.name };
+      if (next.children?.length) next.children = withLocale(next.children);
+      if (next.routes?.length) next.routes = withLocale(next.routes);
+      return next;
+    });
+
   return {
     title: 'LIMS',
+    menu: { locale: true },
+    menuDataRender: (menuData: any[]) => withLocale(menuData),
     rightContentRender: () => (
       <HeaderActions
         initialState={initialState}

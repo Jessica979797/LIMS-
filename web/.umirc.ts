@@ -3,6 +3,7 @@ import { defineConfig } from '@umijs/max';
 export default defineConfig({
   npmClient: 'pnpm',
   antd: {
+    configProvider: {},
     theme: {
       token: {
         colorPrimary: '#2B5FFF',

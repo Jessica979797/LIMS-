@@ -33,6 +33,9 @@ export default {
   /* ---------------- app ---------------- */
   'app.logout': '退出登录',
   'app.logoutSuccess': '已退出登录',
+  'theme.white': '白',
+  'theme.black': '黑',
+  'theme.gray': '灰',
 
   /* ---------------- menu ---------------- */
   'menu.practice': '前端练习',

@@ -568,6 +568,17 @@ export default {
   'role.editTitle': '编辑角色',
   'role.addTitle': '新增角色',
   'role.confirmDelete': '确认删除？',
+  'role.label.system_admin': '系统管理员',
+  'role.label.cs_staff': '客户服务专员',
+  'role.label.cs_supervisor': '客户服务主管',
+  'role.label.op_staff': '运营专员',
+  'role.label.op_supervisor': '运营主管',
+  'role.label.lab_tester': '检测员',
+  'role.label.lab_reviewer': '复核员',
+  'role.label.lab_supervisor': '实验室主管',
+  'role.label.report_preparer': '报告编制员',
+  'role.label.report_reviewer': '报告审核员',
+  'role.label.report_approver': '报告批准员',
 
   /* ---------------- audit ---------------- */
   'audit.col.time': '时间',

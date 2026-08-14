@@ -568,6 +568,17 @@ export default {
   'role.editTitle': 'Edit role',
   'role.addTitle': 'Add role',
   'role.confirmDelete': 'Confirm delete?',
+  'role.label.system_admin': 'System Administrator',
+  'role.label.cs_staff': 'CS Staff',
+  'role.label.cs_supervisor': 'CS Supervisor',
+  'role.label.op_staff': 'OP Staff',
+  'role.label.op_supervisor': 'OP Supervisor',
+  'role.label.lab_tester': 'Lab Tester',
+  'role.label.lab_reviewer': 'Lab Reviewer',
+  'role.label.lab_supervisor': 'Lab Supervisor',
+  'role.label.report_preparer': 'Report Preparer',
+  'role.label.report_reviewer': 'Report Reviewer',
+  'role.label.report_approver': 'Report Approver',
 
   /* ---------------- audit ---------------- */
   'audit.col.time': 'Time',

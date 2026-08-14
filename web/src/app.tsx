@@ -96,6 +96,15 @@ function HeaderActions({ initialState, setInitialState }: any) {
   };
 
   const name = initialState?.currentUser?.name;
+  // 头像显示按角色本地化：后端 name 形如"系统管理员"实为角色名，需随语言切换。
+  const roles: string[] = initialState?.currentUser?.roles ?? [];
+  const displayName =
+    roles[0] != null
+      ? formatMessage({
+          id: `role.label.${roles[0]}`,
+          defaultMessage: name,
+        })
+      : name;
   const currentThemeLabel =
     THEMES.find((t) => t.value === theme)?.labelId || 'theme.white';
 
@@ -148,8 +157,8 @@ function HeaderActions({ initialState, setInitialState }: any) {
         }}
       >
         <Space size={8} style={{ cursor: 'pointer' }}>
-          <Avatar size="small">{name ? name[0] : ''}</Avatar>
-          {name && <span style={{ fontSize: 14 }}>{name}</span>}
+          <Avatar size="small">{displayName ? displayName[0] : ''}</Avatar>
+          {displayName && <span style={{ fontSize: 14 }}>{displayName}</span>}
         </Space>
       </Dropdown>
     </Space>
